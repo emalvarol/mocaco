@@ -1,0 +1,48 @@
+[project]
+name = "catable"
+version = "0.1.0"
+description = "Convergence analysis for Monte Carlo series — works with Polars DataFrames"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "GPL-3.0-only"}
+authors = [
+  {name = "Álvaro Esteban Muñoz", email = "em.alvaro.l@gmail.com"},
+]
+dependencies = [
+    "polars>=1.44.2",
+    "pydantic>=2.13.5",
+    "scipy>=1.18.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+    "ty>=0.0.84",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/catable"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "SIM", "TCH", "TID", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+
+[tool.coverage.run]
+source = ["catable"]
