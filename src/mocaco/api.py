@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import polars as pl
 
-from .methods import clt_absolute
+from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
 
 if TYPE_CHECKING:
     import polars as pl
+
     from .result import ConvergenceResult
+
 
 def samples(
     df: pl.DataFrame,
@@ -47,8 +48,6 @@ class Convergence:
     or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
 
-    clt_absolute = staticmethod(clt_absolute)
-
     def __call__(
         self,
         samples: SampleFrame,
@@ -63,6 +62,16 @@ class Convergence:
             samples=samples,
             params=params,
         )
+
+    def __getattr__(self, name: str):
+        """Resolve registered criteria as callable attributes."""
+        criterion = registry.get(name)
+
+        def _method(samples: SampleFrame, **kwargs):
+            params = criterion.params_type(**kwargs)
+            return criterion.run(samples=samples, params=params)
+
+        return _method
 
 
 convergence = Convergence()

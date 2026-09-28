@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
-from pydantic import BaseModel, Field
+from typing import TYPE_CHECKING
 
 import polars as pl
+from pydantic import BaseModel, Field
 from scipy.stats import norm
 
-from ..protocols import SampleFrame
-from ..result import ConvergenceResult
+from mocaco.result import ConvergenceResult
+
+if TYPE_CHECKING:
+    from mocaco.protocols import SampleFrame
 
 
 # 1. Criterion input parameters
@@ -31,6 +32,7 @@ class CLTAbsoluteParams(BaseModel):
         ge=1,
         description="Minimum number of consecutive iterations meeting the threshold.",
     )
+
 
 # 2. Criterion logic (calculous)
 class CLTAbsoluteCriterion:
@@ -63,45 +65,20 @@ class CLTAbsoluteCriterion:
         # s²_n =
         #     [sum(x²) - sum(x)² / n] / (n - 1)
         #
-        cum_var = (
-            (
-                cum_sum_sq
-                - (cum_sum**2) / n
-            )
-            / (n - 1)
-        )
+        cum_var = (cum_sum_sq - (cum_sum**2) / n) / (n - 1)
 
-        cum_std = (
-            pl.when(n > 1)
-            .then(
-                cum_var
-                .clip(lower_bound=0.0)
-                .sqrt()
-            )
-            .otherwise(0.0)
-        )
+        cum_std = pl.when(n > 1).then(cum_var.clip(lower_bound=0.0).sqrt()).otherwise(0.0)
 
         sem = cum_std / n.sqrt()
 
-        z_score = float(
-            norm.ppf(
-                1.0 - (1.0 - params.confidence_level) / 2.0
-            )
-        )
+        z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
 
         abs_error = sem * z_score
 
-        meets_threshold = (
-            abs_error <= params.threshold
-        )
+        meets_threshold = abs_error <= params.threshold
 
         is_converged = (
-            meets_threshold
-            .cast(pl.Int32)
-            .rolling_sum(
-                window_size=params.stb_window
-            )
-            .fill_null(0)
+            meets_threshold.cast(pl.Int32).rolling_sum(window_size=params.stb_window).fill_null(0)
             == params.stb_window
         )
 
@@ -123,16 +100,8 @@ class CLTAbsoluteCriterion:
             method=self.name,
             data=result_df,
             converged=bool(final["is_converged"]),
-            estimate=(
-                float(final["cum_mean"])
-                if final["cum_mean"] is not None
-                else None
-            ),
-            error=(
-                float(final["abs_error"])
-                if final["abs_error"] is not None
-                else None
-            ),
+            estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
+            error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
             n=int(final["cum_n"]),
             diagnostics={
                 "threshold": params.threshold,
@@ -143,23 +112,3 @@ class CLTAbsoluteCriterion:
                 "target_col": samples.target_col,
             },
         )
-
-# 3. Criterion user API
-def clt_absolute(
-    samples: SampleFrame,
-    *,
-    threshold: float,
-    confidence_level: float = 0.95,
-    stb_window: int = 30,
-) -> ConvergenceResult:
-    """Run the CLT absolute-error convergence criterion."""
-    # Deferred import to avoid circular dependency
-    from ..api import convergence
-
-    return convergence(
-        samples,
-        method="clt_absolute",
-        threshold=threshold,
-        confidence_level=confidence_level,
-        stb_window=stb_window,
-    )

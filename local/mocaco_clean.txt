@@ -1,0 +1,441 @@
+
+========================================
+File: README.md
+========================================
+
+# mocaco
+
+Convergence analysis for Monte Carlo series using Polars DataFrames.
+
+The library provides a simple API for applying different convergence and
+stopping criteria to Monte Carlo simulation results.
+
+## Installation
+
+Create the virtual environment and install the project in editable mode with `uv`:
+
+```bash
+uv venv
+uv sync
+uv pip install -e .
+```
+
+
+========================================
+File: src/mocaco/api.py
+========================================
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from . import methods as _methods  # noqa: F401
+from .protocols import SampleFrame
+from .registry import registry
+
+if TYPE_CHECKING:
+    import polars as pl
+
+    from .result import ConvergenceResult
+
+
+def samples(
+    df: pl.DataFrame,
+    *,
+    it_col: str | None,
+    target_col: str,
+) -> SampleFrame:
+    
+    return SampleFrame(
+        df=df,
+        it_col=it_col,
+        target_col=target_col,
+    )
+
+
+class Convergence:
+    
+
+    def __call__(
+        self,
+        samples: SampleFrame,
+        *,
+        method: str,
+        **kwargs,
+    ) -> ConvergenceResult:
+        
+        criterion = registry.get(method)
+        params = criterion.params_type(**kwargs)
+        return criterion.run(
+            samples=samples,
+            params=params,
+        )
+
+    def __getattr__(self, name: str):
+        
+        criterion = registry.get(name)
+
+        def _method(samples: SampleFrame, **kwargs):
+            params = criterion.params_type(**kwargs)
+            return criterion.run(samples=samples, params=params)
+
+        return _method
+
+
+convergence = Convergence()
+
+
+def methods() -> tuple[str, ...]:
+    
+    return registry.names()
+
+
+def describe(method: str) -> dict:
+    
+    return registry.describe(method)
+
+
+========================================
+File: src/mocaco/protocols.py
+========================================
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Protocol
+
+import polars as pl
+
+if TYPE_CHECKING:
+    from .result import ConvergenceResult
+
+logger = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class SampleFrame:
+    
+
+    df: pl.DataFrame
+    it_col: str | None
+    target_col: str
+
+    def __post_init__(self) -> None:
+        if self.it_col is None:
+            new_df = self.df.with_columns(
+                pl.arange(1, len(self.df) + 1).alias("it")
+            )
+            object.__setattr__(self, "df", new_df)
+            object.__setattr__(self, "it_col", "it")
+            logger.info("it_col was None — auto-created column 'it' with sequential indices.")
+            return
+
+        missing = [
+            col
+            for col in (self.it_col, self.target_col)
+            if col not in self.df.columns
+        ]
+
+        if missing:
+            raise ValueError(
+                f"Columns not found in DataFrame: {missing}. "
+                f"Available columns: {self.df.columns}"
+            )
+
+        if self.df.is_empty():
+            raise ValueError("The sample DataFrame cannot be empty.")
+
+
+class Criterion(Protocol):
+    
+
+    name: str
+    description: str
+    params_type: type[Any]
+
+    def run(
+        self,
+        samples: SampleFrame,
+        params: Any,
+    ) -> ConvergenceResult:
+        ...
+
+
+========================================
+File: src/mocaco/registry.py
+========================================
+
+from __future__ import annotations
+
+from dataclasses import MISSING, fields, is_dataclass
+from typing import Any
+
+from .protocols import Criterion
+
+
+class CriterionRegistry:
+    def __init__(self) -> None:
+        self._criteria: dict[str, Criterion] = {}
+
+    def register(
+        self,
+        criterion: Criterion,
+        *,
+        overwrite: bool = False,
+    ) -> None:
+        name = criterion.name
+
+        if not name:
+            raise ValueError("A criterion must define a non-empty name.")
+
+        if name in self._criteria and not overwrite:
+            raise ValueError(
+                f"Criterion {name!r} is already registered."
+            )
+
+        self._criteria[name] = criterion
+
+    def get(self, name: str) -> Criterion:
+        try:
+            return self._criteria[name]
+        except KeyError as exc:
+            available = ", ".join(self.names())
+            raise ValueError(
+                f"Unknown convergence criterion: {name!r}. "
+                f"Available criteria: {available}"
+            ) from exc
+
+    def names(self) -> tuple[str, ...]:
+        return tuple(self._criteria.keys())
+
+    def describe(self, name: str) -> dict[str, Any]:
+        criterion = self.get(name)
+        params_type = criterion.params_type
+
+        parameters: dict[str, Any] = {}
+
+        if is_dataclass(params_type):
+            for field in fields(params_type):
+                if field.default is not MISSING:
+                    default = field.default
+                elif field.default_factory is not MISSING:
+                    default = "<factory>"
+                else:
+                    default = "<required>"
+
+                parameters[field.name] = {
+                    "type": field.type,
+                    "default": default,
+                    "description": field.metadata.get(
+                        "description",
+                        "",
+                    ),
+                }
+
+        return {
+            "name": criterion.name,
+            "description": criterion.description,
+            "parameters": parameters,
+            "params_type": params_type,
+        }
+
+
+registry = CriterionRegistry()
+
+
+========================================
+File: src/mocaco/result.py
+========================================
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+import polars as pl
+
+
+@dataclass(frozen=True)
+class ConvergenceResult:
+    
+
+    method: str
+    data: pl.DataFrame
+    converged: bool
+    estimate: float | None
+    error: float | None
+    n: int
+    diagnostics: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_converged(self) -> bool:
+        
+        return self.converged
+
+    def to_polars(self) -> pl.DataFrame:
+        
+        return self.data
+
+    def __str__(self) -> str:
+        return str(self.data)
+
+    def __repr__(self) -> str:
+        return (
+            f"ConvergenceResult("
+            f"method={self.method!r}, "
+            f"converged={self.converged!r}, "
+            f"estimate={self.estimate!r}, "
+            f"error={self.error!r}, "
+            f"n={self.n!r}"
+            f")"
+        )
+
+
+========================================
+File: src/mocaco/__init__.py
+========================================
+
+from .api import convergence, describe, methods, samples
+
+__all__ = [
+    "convergence",
+    "describe",
+    "methods",
+    "samples",
+]
+
+
+========================================
+File: src/mocaco/methods/clt_absolute.py
+========================================
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import polars as pl
+from pydantic import BaseModel, Field
+from scipy.stats import norm
+
+from mocaco.result import ConvergenceResult
+
+if TYPE_CHECKING:
+    from mocaco.protocols import SampleFrame
+
+
+# 1. Criterion input parameters
+class CLTAbsoluteParams(BaseModel):
+    threshold: float = Field(
+        ...,
+        gt=0,
+        description="Maximum accepted absolute Monte Carlo error.",
+    )
+
+    confidence_level: float = Field(
+        0.95,
+        gt=0,
+        lt=1,
+        description="Confidence level used for the CLT margin of error.",
+    )
+
+    stb_window: int = Field(
+        30,
+        ge=1,
+        description="Minimum number of consecutive iterations meeting the threshold.",
+    )
+
+
+# 2. Criterion logic (calculous)
+class CLTAbsoluteCriterion:
+    name = "clt_absolute"
+
+    description = (
+        "Central Limit Theorem based convergence criterion "
+        "using an absolute Monte Carlo error threshold."
+    )
+
+    params_type = CLTAbsoluteParams
+
+    def run(
+        self,
+        samples: SampleFrame,
+        params: CLTAbsoluteParams,
+    ) -> ConvergenceResult:
+
+        df = samples.df.sort(samples.it_col)
+
+        target = pl.col(samples.target_col).cast(pl.Float64)
+
+        n = target.cum_count()
+
+        cum_sum = target.cum_sum()
+        cum_sum_sq = (target**2).cum_sum()
+
+        # Sample variance:
+        #
+        # s²_n =
+        #     [sum(x²) - sum(x)² / n] / (n - 1)
+        #
+        cum_var = (cum_sum_sq - (cum_sum**2) / n) / (n - 1)
+
+        cum_std = pl.when(n > 1).then(cum_var.clip(lower_bound=0.0).sqrt()).otherwise(0.0)
+
+        sem = cum_std / n.sqrt()
+
+        z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
+
+        abs_error = sem * z_score
+
+        meets_threshold = abs_error <= params.threshold
+
+        is_converged = (
+            meets_threshold.cast(pl.Int32).rolling_sum(window_size=params.stb_window).fill_null(0)
+            == params.stb_window
+        )
+
+        result_df = df.with_columns(
+            [
+                n.alias("cum_n"),
+                (cum_sum / n).alias("cum_mean"),
+                cum_std.alias("cum_std"),
+                sem.alias("sem"),
+                abs_error.alias("abs_error"),
+                meets_threshold.alias("meets_threshold"),
+                is_converged.alias("is_converged"),
+            ]
+        )
+
+        final = result_df.tail(1).to_dicts()[0]
+
+        return ConvergenceResult(
+            method=self.name,
+            data=result_df,
+            converged=bool(final["is_converged"]),
+            estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
+            error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
+            n=int(final["cum_n"]),
+            diagnostics={
+                "threshold": params.threshold,
+                "confidence_level": params.confidence_level,
+                "stb_window": params.stb_window,
+                "z_score": z_score,
+                "it_col": samples.it_col,
+                "target_col": samples.target_col,
+            },
+        )
+
+
+========================================
+File: src/mocaco/methods/__init__.py
+========================================
+
+from mocaco.registry import registry
+
+from .clt_absolute import CLTAbsoluteCriterion
+
+registry.register(CLTAbsoluteCriterion())
+
+__all__ = [
+    "CLTAbsoluteCriterion",
+]
+

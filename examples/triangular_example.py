@@ -18,4 +18,6 @@ result = mcc.convergence.clt_absolute(
     threshold=1.0,
 )
 with pl.Config(tbl_rows=-1):
+    print(result.method)
+    print(result.converged)
     print(result)
