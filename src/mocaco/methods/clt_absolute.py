@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from pydantic import BaseModel, Field
+
 import polars as pl
 from scipy.stats import norm
 
@@ -10,55 +12,25 @@ from ..result import ConvergenceResult
 
 
 # 1. Criterion input parameters
-@dataclass(frozen=True)
-class CLTAbsoluteParams:
-    threshold: float = field(
-        metadata={
-            "description": (
-                "Maximum accepted absolute Monte Carlo error."
-            )
-        }
+class CLTAbsoluteParams(BaseModel):
+    threshold: float = Field(
+        ...,
+        gt=0,
+        description="Maximum accepted absolute Monte Carlo error.",
     )
 
-    confidence_level: float = field(
-        default=0.95,
-        metadata={
-            "description": (
-                "Confidence level used for the CLT margin of error."
-            )
-        },
+    confidence_level: float = Field(
+        0.95,
+        gt=0,
+        lt=1,
+        description="Confidence level used for the CLT margin of error.",
     )
 
-    stb_window: int = field(
-        default=30,
-        metadata={
-            "description": (
-                "Minimum number of consecutive iterations "
-                "meeting the threshold."
-            )
-        },
+    stb_window: int = Field(
+        30,
+        ge=1,
+        description="Minimum number of consecutive iterations meeting the threshold.",
     )
-
-    def __post_init__(self) -> None:
-        if self.threshold <= 0:
-            raise ValueError(
-                "threshold must be greater than zero."
-            )
-
-        if not 0 < self.confidence_level < 1:
-            raise ValueError(
-                "confidence_level must be between 0 and 1."
-            )
-
-        if self.stb_window < 1:
-            raise ValueError(
-                "stb_window must be at least 1."
-            )
-
-        if not isinstance(self.stb_window, int):
-            raise TypeError(
-                "stb_window must be an integer."
-            )
 
 # 2. Criterion logic (calculous)
 class CLTAbsoluteCriterion:
