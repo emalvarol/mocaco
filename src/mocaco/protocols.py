@@ -27,8 +27,8 @@ class SampleFrame:
     """
 
     df: pl.DataFrame
-    it_col: str | None
     target_col: str
+    it_col: str | None = None
 
     def __post_init__(self) -> None:
         if self.it_col is None:
@@ -64,6 +64,11 @@ class Criterion(Protocol):
     name: str
     description: str
     params_type: type[Any]
+    assumptions: list[str]
+    limitations: list[str]
+    result_interpretation: str
+    example_usage: str
+    references: list[str]
 
     def run(
         self,

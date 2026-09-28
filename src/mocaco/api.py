@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 def samples(
     df: pl.DataFrame,
     *,
-    it_col: str | None,
     target_col: str,
+    it_col: Optional[str] = None,
 ) -> SampleFrame:
     """
     Create the normalized and frozen data representation used by convergence criteria.
@@ -35,8 +35,8 @@ def samples(
     """
     return SampleFrame(
         df=df,
-        it_col=it_col,
         target_col=target_col,
+        it_col=it_col,
     )
 
 

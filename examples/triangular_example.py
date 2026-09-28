@@ -6,13 +6,13 @@ import mocaco as mcc
 
 # 50 samples from triangular(0, 10) with mode 5 (c=0.5)
 vals = triang.rvs(c=0.5, loc=0, scale=10, size=50)
-df = pl.DataFrame({"it": list(range(50)), "value": vals})
+df = pl.DataFrame({"value": vals})
 
 # API
 mcc.methods()
 mcc.describe("clt_absolute")
 
-samples = mcc.samples(df, it_col="it", target_col="value")
+samples = mcc.samples(df, target_col="value")
 result = mcc.convergence.clt_absolute(
     samples,
     threshold=1.0,

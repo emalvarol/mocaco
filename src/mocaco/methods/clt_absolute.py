@@ -50,6 +50,40 @@ class CLTAbsoluteCriterion:
 
     params_type = CLTAbsoluteParams
 
+    assumptions = [
+        "Samples are independent and identically distributed (i.i.d.).",
+        "The target quantity has finite variance.",
+        "The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.",
+    ]
+
+    limitations = [
+        "This is a probabilistic stopping criterion, not a proof of convergence.",
+        "For small sample sizes, the normal approximation may be inaccurate.",
+        "Does not detect systematic bias or non-stationarity in the sampling process.",
+        "The stability window introduces a lag in detecting convergence.",
+    ]
+
+    result_interpretation = (
+        "is_converged is True when the CLT-based absolute error has stayed below "
+        "the threshold for at least stb_window consecutive iterations. "
+        "estimate is the cumulative mean at the final sample. "
+        "error is the CLT-based absolute error (z_score * SEM) at the final sample. "
+        "n is the total number of samples evaluated."
+    )
+
+    example_usage = """\
+import polars as pl
+import mocaco as mcc
+
+df = pl.DataFrame({"it": range(100), "value": [1.0] * 100})
+samples = mcc.samples(df, it_col="it", target_col="value")
+result = mcc.convergence.clt_absolute(samples, threshold=0.1)
+print(result.is_converged)"""
+
+    references = [
+        "https://en.wikipedia.org/wiki/Central_limit_theorem",
+    ]
+
     def run(
         self,
         samples: SampleFrame,

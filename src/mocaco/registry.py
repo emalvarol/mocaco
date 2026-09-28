@@ -67,7 +67,19 @@ class CriterionRegistry:
 
         parameters: dict[str, Any] = {}
 
-        if is_dataclass(params_type):
+        if hasattr(params_type, "model_fields"):
+            for field_name, field_info in params_type.model_fields.items():
+                if field_info.is_required():
+                    default = "<required>"
+                else:
+                    default = field_info.default
+
+                parameters[field_name] = {
+                    "type": str(field_info.annotation),
+                    "default": default,
+                    "description": field_info.description or "",
+                }
+        elif is_dataclass(params_type):
             for field in fields(params_type):
                 if field.default is not MISSING:
                     default = field.default
@@ -88,6 +100,11 @@ class CriterionRegistry:
         return {
             "name": criterion.name,
             "description": criterion.description,
+            "assumptions": criterion.assumptions,
+            "limitations": criterion.limitations,
+            "result_interpretation": criterion.result_interpretation,
+            "example_usage": criterion.example_usage,
+            "references": criterion.references,
             "parameters": parameters,
             "params_type": params_type,
         }

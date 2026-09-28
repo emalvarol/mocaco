@@ -2,19 +2,39 @@
 # python scripts/generate_stubs.py
 
 from pathlib import Path
+import inspect
+import re
 from mocaco.registry import registry
+from mocaco.api import samples, methods, describe
+
+def get_function_stub(func) -> str:
+    """Dynamically generates a stub line for a given function."""
+    sig = inspect.signature(func)
+    
+    # str(sig) yields e.g.: (df: pl.DataFrame, *, target_col: str) -> SampleFrame
+    sig_str = str(sig)
+    
+    # If the source file uses `from __future__ import annotations`, inspect 
+    # might wrap the type hints in single quotes. This regex safely removes 
+    # quotes from type hints while leaving default string values intact.
+    sig_str = re.sub(r"(?<=: )'([^']+)'", r"\1", sig_str)
+    sig_str = re.sub(r"(?<=-> )'([^']+)'", r"\1", sig_str)
+    
+    return f"def {func.__name__}{sig_str}: ..."
 
 def generate_api_stub():
     stub_lines = [
         "from __future__ import annotations",
         "",
         "import polars as pl",
+        "from typing import Optional", # 2. Added this to support your new Optional[str]
         "from .protocols import SampleFrame",
         "from .result import ConvergenceResult",
         "",
-        "def samples(df: pl.DataFrame, *, it_col: str | None, target_col: str) -> SampleFrame: ...",
-        "def methods() -> tuple[str, ...]: ...",
-        "def describe(method: str) -> dict: ...",
+        # 3. Replace the hardcoded strings with our dynamic helper
+        get_function_stub(samples),
+        get_function_stub(methods),
+        get_function_stub(describe),
         "",
         "class Convergence:",
         '    def __call__(self, samples: SampleFrame, *, method: str, **kwargs) -> ConvergenceResult: ...'
