@@ -47,7 +47,7 @@ class Convergence:
     Use as ``convergence(samples, method="...", **kwargs)`` for generic calls,
     or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
-
+    
     def __call__(
         self,
         samples: SampleFrame,
