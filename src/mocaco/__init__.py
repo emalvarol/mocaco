@@ -1,5 +1,4 @@
 from .api import (
-    clt_absolute,
     convergence,
     describe,
     methods,
@@ -8,7 +7,6 @@ from .api import (
 
 __all__ = [
     "convergence",
-    "clt_absolute",
     "samples",
     "methods",
     "describe",

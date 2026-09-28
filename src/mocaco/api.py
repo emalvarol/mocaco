@@ -1,23 +1,36 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 import polars as pl
 
+from .methods import clt_absolute
 from .protocols import SampleFrame
 from .registry import registry
-from .result import ConvergenceResult
 
-# Importing methods triggers registration of built-in criteria.
-from . import methods as _methods  # noqa: F401
-
+if TYPE_CHECKING:
+    import polars as pl
+    from .result import ConvergenceResult
 
 def samples(
     df: pl.DataFrame,
     *,
-    it_col: str,
+    it_col: str | None,
     target_col: str,
 ) -> SampleFrame:
     """
-    Create the normalized representation used by convergence criteria.
+    Create the normalized and frozen data representation used by convergence criteria.
+    This prevents input errors and ensure the input data is read-only and is
+    never modified accidentally.
+
+    Parameters
+        ----------
+        df
+            Source Polars DataFrame.
+        it_col
+            Column containing the iteration/order of the samples. If the user omit it, it
+            is automatically completed.
+        target_col
+            Column containing the quantity to analyze.
     """
     return SampleFrame(
         df=df,
@@ -26,42 +39,33 @@ def samples(
     )
 
 
-def convergence(
-    samples: SampleFrame,
-    *,
-    method: str,
-    **kwargs,
-) -> ConvergenceResult:
+class Convergence:
     """
-    Run a convergence criterion by name.
+    Callable namespace exposing registered convergence criteria as attributes.
+
+    Use as ``convergence(samples, method="...", **kwargs)`` for generic calls,
+    or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
-    criterion = registry.get(method)
 
-    params = criterion.params_type(**kwargs)
+    clt_absolute = staticmethod(clt_absolute)
 
-    return criterion.run(
-        samples=samples,
-        params=params,
-    )
+    def __call__(
+        self,
+        samples: SampleFrame,
+        *,
+        method: str,
+        **kwargs,
+    ) -> ConvergenceResult:
+        """Generic invocation using any registered criterion by name."""
+        criterion = registry.get(method)
+        params = criterion.params_type(**kwargs)
+        return criterion.run(
+            samples=samples,
+            params=params,
+        )
 
 
-def clt_absolute(
-    samples: SampleFrame,
-    *,
-    threshold: float,
-    confidence_level: float = 0.95,
-    stb_window: int = 30,
-) -> ConvergenceResult:
-    """
-    Run the CLT absolute-error convergence criterion.
-    """
-    return convergence(
-        samples,
-        method="clt_absolute",
-        threshold=threshold,
-        confidence_level=confidence_level,
-        stb_window=stb_window,
-    )
+convergence = Convergence()
 
 
 def methods() -> tuple[str, ...]:

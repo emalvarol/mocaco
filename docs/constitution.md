@@ -265,3 +265,8 @@ mc.convergence(samples, method="clt")
 ```
 
 to the corresponding statistical computation without understanding the entire project.
+
+## 16. AI Agents
+
+Do not commit, only human developers can commit
+

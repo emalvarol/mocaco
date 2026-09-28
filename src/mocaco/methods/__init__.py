@@ -1,5 +1,5 @@
 from ..registry import registry
-from .clt_absolute import CLTAbsoluteCriterion
+from .clt_absolute import CLTAbsoluteCriterion, clt_absolute
 
 registry.register(
     CLTAbsoluteCriterion()
@@ -7,4 +7,5 @@ registry.register(
 
 __all__ = [
     "CLTAbsoluteCriterion",
+    "clt_absolute",
 ]

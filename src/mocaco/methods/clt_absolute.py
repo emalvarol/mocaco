@@ -9,6 +9,7 @@ from ..protocols import SampleFrame
 from ..result import ConvergenceResult
 
 
+# 1. Criterion input parameters
 @dataclass(frozen=True)
 class CLTAbsoluteParams:
     threshold: float = field(
@@ -59,7 +60,7 @@ class CLTAbsoluteParams:
                 "stb_window must be an integer."
             )
 
-
+# 2. Criterion logic (calculous)
 class CLTAbsoluteCriterion:
     name = "clt_absolute"
 
@@ -170,3 +171,23 @@ class CLTAbsoluteCriterion:
                 "target_col": samples.target_col,
             },
         )
+
+# 3. Criterion user API
+def clt_absolute(
+    samples: SampleFrame,
+    *,
+    threshold: float,
+    confidence_level: float = 0.95,
+    stb_window: int = 30,
+) -> ConvergenceResult:
+    """Run the CLT absolute-error convergence criterion."""
+    # Deferred import to avoid circular dependency
+    from ..api import convergence
+
+    return convergence(
+        samples,
+        method="clt_absolute",
+        threshold=threshold,
+        confidence_level=confidence_level,
+        stb_window=stb_window,
+    )

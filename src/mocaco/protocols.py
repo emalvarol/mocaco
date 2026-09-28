@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 import polars as pl
+
+if TYPE_CHECKING:
+    from .result import ConvergenceResult
+
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class SampleFrame:
@@ -21,10 +27,19 @@ class SampleFrame:
     """
 
     df: pl.DataFrame
-    it_col: str
+    it_col: str | None
     target_col: str
 
     def __post_init__(self) -> None:
+        if self.it_col is None:
+            new_df = self.df.with_columns(
+                pl.arange(1, len(self.df) + 1).alias("it")
+            )
+            object.__setattr__(self, "df", new_df)
+            object.__setattr__(self, "it_col", "it")
+            logger.info("it_col was None — auto-created column 'it' with sequential indices.")
+            return
+
         missing = [
             col
             for col in (self.it_col, self.target_col)
@@ -54,5 +69,5 @@ class Criterion(Protocol):
         self,
         samples: SampleFrame,
         params: Any,
-    ) -> "ConvergenceResult":
+    ) -> ConvergenceResult:
         ...

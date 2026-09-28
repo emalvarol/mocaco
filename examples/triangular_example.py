@@ -4,22 +4,18 @@ import polars as pl
 from scipy.stats import triang
 import mocaco as mcc
 
-mcc.methods()
-mcc.describe("clt_absolute")
-
 # 50 samples from triangular(0, 10) with mode 5 (c=0.5)
 vals = triang.rvs(c=0.5, loc=0, scale=10, size=50)
 df = pl.DataFrame({"it": list(range(50)), "value": vals})
 
-# Functional API — explicit discovery
+# API
+mcc.methods()
+mcc.describe("clt_absolute")
+
 samples = mcc.samples(df, it_col="it", target_col="value")
-result_fn = mcc.clt_absolute(samples, threshold=1.0)
-with pl.Config(tbl_rows=-1):
-    print(result_fn)
-result = mcc.convergence(
+result = mcc.convergence.clt_absolute(
     samples,
-    method="clt_absolute",
     threshold=1.0,
 )
 with pl.Config(tbl_rows=-1):
-    print(result_fn)
+    print(result)
