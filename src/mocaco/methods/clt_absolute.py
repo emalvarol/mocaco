@@ -99,7 +99,7 @@ class CLTAbsoluteCriterion:
         return ConvergenceResult(
             method=self.name,
             data=result_df,
-            converged=bool(final["is_converged"]),
+            is_converged=bool(final["is_converged"]),
             estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
             error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
             n=int(final["cum_n"]),

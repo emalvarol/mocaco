@@ -165,7 +165,7 @@ An example of conceptual model is:
 ```python
 @dataclass
 class ConvergenceResult:
-    converged: bool
+    is_converged: bool
     estimate: float
     error: float
     n: int
@@ -189,12 +189,11 @@ registry.names()
 registry.register(...)
 ```
 
-New methods are added into the registry and the Convergence class as:
+New methods are added by registering the criterion in `methods/__init__.py`:
 ```python
-registry.register(
-    CLTAbsoluteCriterion()
-)
-# AND
-from .methods import clt_absolute
-clt_absolute = staticmethod(clt_absolute)
+from .clt_absolute import CLTAbsoluteCriterion
+
+registry.register(CLTAbsoluteCriterion())
 ```
+
+The `Convergence` façade resolves registered criteria automatically through the registry, so no manual changes to `api.py` are needed. The type stub file `api.pyi` is regenerated from the registry by running `python scripts/generate_stubs.py`.

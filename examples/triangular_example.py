@@ -19,5 +19,5 @@ result = mcc.convergence.clt_absolute(
 )
 with pl.Config(tbl_rows=-1):
     print(result.method)
-    print(result.converged)
+    print(result.is_converged)
     print(result)
