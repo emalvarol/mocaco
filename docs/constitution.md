@@ -26,7 +26,7 @@ The public API MUST NOT require the user to instantiate internal strategy, regis
 
 Each convergence criterion MUST be implemented as an independent method containing primarly its input parameters its math logic and its API use.
 
-Contributors MUST be able to easily add a new criterion even being non python experts following a method protocol. The addition is done within the criterion module plus a single registration line in `methods/__init__.py`. The public API MUST integrate the new criterion automatically through the registry-backed façade, without manual changes to `api.py`. The type stub file `api.pyi` MUST be regenerated from the registry by running `scripts/generate_stubs.py`.
+Contributors MUST be able to easily add a new criterion even being non python experts following a method protocol. The addition is done within a single criterion module in `methods/` by decorating the criterion class with `@registry.register()`.
 
 Method identifiers SHOULD be stable, concise, lowercase, and descriptive.
 
@@ -80,6 +80,8 @@ All convergence methods MUST return a common `ConvergenceResult` abstraction.
 Convergence methods MUST be discoverable through a registry.
 
 The registry MUST map stable public method names to their implementations.
+
+The registry MUST support registration both programmatically, `registry.register(criterion)`, and as a class decorator, `@registry.register()`.
 
 The central API MUST resolve methods through the registry rather than through hard-coded conditional logic.
 

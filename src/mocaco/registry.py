@@ -1,32 +1,52 @@
 from __future__ import annotations
 
 from dataclasses import MISSING, fields, is_dataclass
-from typing import Any
+from typing import Any, Callable, TypeVar, overload
 
 from .protocols import Criterion
 
+C = TypeVar("C", bound=type)
 
 class CriterionRegistry:
     def __init__(self) -> None:
         self._criteria: dict[str, Criterion] = {}
 
+    # Overload 1: Decorator usage (no criterion provided)
+    @overload
+    def register(self, criterion: None = None, *, overwrite: bool = False) -> Callable[[C], C]: ...
+
+    # Overload 2: Programmatic usage (criterion instance provided)
+    @overload
+    def register(self, criterion: Criterion, *, overwrite: bool = False) -> Criterion: ...
+    
     def register(
         self,
-        criterion: Criterion,
+        criterion: Criterion | None = None,
         *,
         overwrite: bool = False,
-    ) -> None:
-        name = criterion.name
+    ) -> Any:
+        # 1. Programmatic use: registry.register(MyCriterion())
+        if criterion is not None:
+            name = criterion.name
 
-        if not name:
-            raise ValueError("A criterion must define a non-empty name.")
+            if not name:
+                raise ValueError("A criterion must define a non-empty name.")
 
-        if name in self._criteria and not overwrite:
-            raise ValueError(
-                f"Criterion {name!r} is already registered."
-            )
+            if name in self._criteria and not overwrite:
+                raise ValueError(
+                    f"Criterion {name!r} is already registered."
+                )
 
-        self._criteria[name] = criterion
+            self._criteria[name] = criterion
+            return criterion
+
+        # 2. Decorator use: @registry.register()
+        def wrapper(cls: C) -> C:
+            instance = cls()
+            self.register(instance, overwrite=overwrite)
+            return cls
+
+        return wrapper
 
     def get(self, name: str) -> Criterion:
         try:

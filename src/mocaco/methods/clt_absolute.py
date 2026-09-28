@@ -1,11 +1,15 @@
+# Mandatory basic modules
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+# Basic modules used to build the criterion (According contributor needs)
 import polars as pl
 from pydantic import BaseModel, Field
 from scipy.stats import norm
 
+# Modules needed from mocaco
+from mocaco.registry import registry
 from mocaco.result import ConvergenceResult
 
 if TYPE_CHECKING:
@@ -35,6 +39,7 @@ class CLTAbsoluteParams(BaseModel):
 
 
 # 2. Criterion logic (calculous)
+@registry.register()
 class CLTAbsoluteCriterion:
     name = "clt_absolute"
 

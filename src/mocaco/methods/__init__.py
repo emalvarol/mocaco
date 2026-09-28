@@ -1,9 +1,5 @@
-from mocaco.registry import registry
+import importlib
+import pkgutil
 
-from .clt_absolute import CLTAbsoluteCriterion
-
-registry.register(CLTAbsoluteCriterion())
-
-__all__ = [
-    "CLTAbsoluteCriterion",
-]
+for _, module_name, _ in pkgutil.iter_modules(__path__):
+    importlib.import_module(f"{__name__}.{module_name}")

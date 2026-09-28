@@ -189,11 +189,13 @@ registry.names()
 registry.register(...)
 ```
 
-New methods are added by registering the criterion in `methods/__init__.py`:
+New methods are added by creating a single module in `methods/` whose criterion class is decorated with `@registry.register()`:
 ```python
-from .clt_absolute import CLTAbsoluteCriterion
+from mocaco.registry import registry
 
-registry.register(CLTAbsoluteCriterion())
+@registry.register()
+class CLTAbsoluteCriterion:
+    ...
 ```
 
-The `Convergence` façade resolves registered criteria automatically through the registry, so no manual changes to `api.py` are needed. The type stub file `api.pyi` is regenerated from the registry by running `python scripts/generate_stubs.py`.
+The methods package auto-discovers and imports every module in `methods/`, so the decorator runs at import time and no manual registration is needed. The `Convergence` façade resolves registered criteria automatically through the registry, so no manual changes to `api.py` are needed. The type stub file `api.pyi` is regenerated from the registry by running `python scripts/generate_stubs.py`.
