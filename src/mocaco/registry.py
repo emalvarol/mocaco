@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from dataclasses import MISSING, fields, is_dataclass
 from typing import Any, Callable, TypeVar, overload
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
 
 from .protocols import Criterion
 
 C = TypeVar("C", bound=type)
+
+console = Console()
 
 class CriterionRegistry:
     def __init__(self) -> None:
@@ -61,53 +66,64 @@ class CriterionRegistry:
     def names(self) -> tuple[str, ...]:
         return tuple(self._criteria.keys())
 
-    def describe(self, name: str) -> dict[str, Any]:
-        criterion = self.get(name)
+    def describe(self, name: str) -> dict[str, Any] | None:
+        # 1. Fetch the criterion from the registry
+        try:
+            criterion = registry.get(name)
+        except KeyError:
+            console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
+            return None
+    
+        # 2. Print the Method Name and Main Description in a Panel
+        console.print()
+        console.print(
+            Panel(
+                f"{criterion.description}", 
+                title=f"Method: [bold cyan]{name}[/bold cyan]",
+                title_align="left",
+                border_style="cyan",
+                expand=False
+            )
+        )
+
+        # 3. Create a Table for the Parameters
+        table = Table(
+            title="Parameters", 
+            title_style="bold magenta", 
+            title_justify="left", 
+            show_header=True, 
+            header_style="bold black on white"
+        )
+        
+        table.add_column("Name", style="bold cyan", no_wrap=True)
+        table.add_column("Type", style="green")
+        table.add_column("Required", justify="center")
+        table.add_column("Default", style="yellow")
+        table.add_column("Description", style="dim")
+
+        # 4. Introspect the Pydantic V2 model fields
         params_type = criterion.params_type
+        
+        for field_name, field_info in params_type.model_fields.items():
+            # Get type name cleanly
+            field_type = getattr(field_info.annotation, '__name__', str(field_info.annotation))
+            
+            is_required = field_info.is_required()
+            req_icon = "[green]✔[/green]" if is_required else "[red]✘[/red]"
+            default_val = "-" if is_required else repr(field_info.default)
+            desc = field_info.description or "No description provided."
 
-        parameters: dict[str, Any] = {}
+            table.add_row(
+                field_name,
+                field_type,
+                req_icon,
+                default_val,
+                desc
+            )
 
-        if hasattr(params_type, "model_fields"):
-            for field_name, field_info in params_type.model_fields.items():
-                if field_info.is_required():
-                    default = "<required>"
-                else:
-                    default = field_info.default
-
-                parameters[field_name] = {
-                    "type": str(field_info.annotation),
-                    "default": default,
-                    "description": field_info.description or "",
-                }
-        elif is_dataclass(params_type):
-            for field in fields(params_type):
-                if field.default is not MISSING:
-                    default = field.default
-                elif field.default_factory is not MISSING:
-                    default = "<factory>"
-                else:
-                    default = "<required>"
-
-                parameters[field.name] = {
-                    "type": field.type,
-                    "default": default,
-                    "description": field.metadata.get(
-                        "description",
-                        "",
-                    ),
-                }
-
-        return {
-            "name": criterion.name,
-            "description": criterion.description,
-            "assumptions": criterion.assumptions,
-            "limitations": criterion.limitations,
-            "result_interpretation": criterion.result_interpretation,
-            "example_usage": criterion.example_usage,
-            "references": criterion.references,
-            "parameters": parameters,
-            "params_type": params_type,
-        }
+        # 5. Render the table
+        console.print(table)
+        console.print()
 
 
 registry = CriterionRegistry()

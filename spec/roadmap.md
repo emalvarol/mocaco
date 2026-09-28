@@ -5,5 +5,5 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 
 ## General
 
-- [ ] Improve documentation and create documentation from criterions
+- [ ] 
 

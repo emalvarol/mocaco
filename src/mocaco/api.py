@@ -82,6 +82,6 @@ def methods() -> tuple[str, ...]:
     return registry.names()
 
 
-def describe(method: str) -> dict:
+def describe(name: str) -> dict | None:
     """Return metadata and parameter information for a criterion."""
-    return registry.describe(method)
+    return registry.describe(name)
