@@ -64,6 +64,7 @@ The user MUST be able to define the sample data and select a specific convergenc
 
 ```python
 import mocaco as mcc
+
 samples = mcc.samples(df, it_col="it", target_col="value")
 result = mcc.convergence(samples, method="clt_absolute")
 # OR
@@ -100,8 +101,7 @@ class Criterion(Protocol):
         self,
         samples,
         params,
-    ) -> ConvergenceResult:
-        ...
+    ) -> ConvergenceResult: ...
 ```
 
 ## 5. Parameter Specification
@@ -142,14 +142,10 @@ A CLT-based criterion SHOULD conceptually have the following structure:
 ```python
 class CLTCriterion:
     name = "clt"
-    description = (
-        "Central Limit Theorem based stopping criterion "
-        "using relative Monte Carlo error."
-    )
+    description = "Central Limit Theorem based stopping criterion using relative Monte Carlo error."
     params = CLTParams
 
-    def run(self, samples, params):
-        ...
+    def run(self, samples, params): ...
 ```
 
 ## 7. Result Contract
@@ -193,9 +189,9 @@ New methods are added by creating a single module in `methods/` whose criterion 
 ```python
 from mocaco.registry import registry
 
+
 @registry.register()
-class CLTAbsoluteCriterion:
-    ...
+class CLTAbsoluteCriterion: ...
 ```
 
 The methods package auto-discovers and imports every module in `methods/`, so the decorator runs at import time and no manual registration is needed. The `Convergence` façade resolves registered criteria automatically through the registry, so no manual changes to `api.py` are needed. The type stub file `api.pyi` is regenerated from the registry by running `python scripts/generate_stubs.py`.

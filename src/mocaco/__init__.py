@@ -1,3 +1,5 @@
+"""Main module to expose the mocaco API."""
+
 from .api import convergence, describe, methods, samples
 
 __all__ = [

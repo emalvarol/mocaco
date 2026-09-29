@@ -1,6 +1,8 @@
+"""Main module to define the API behaviour and usage."""
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
@@ -17,15 +19,16 @@ def samples(
     df: pl.DataFrame,
     *,
     target_col: str,
-    it_col: Optional[str] = None,
+    it_col: str | None = None,
 ) -> SampleFrame:
     """
     Create the normalized and frozen data representation used by convergence criteria.
+
     This prevents input errors and ensure the input data is read-only and is
     never modified accidentally.
 
     Parameters
-        ----------
+    ----------
         df
             Source Polars DataFrame.
         it_col
@@ -48,7 +51,7 @@ class Convergence:
     Use as ``convergence(samples, method="...", **kwargs)`` for generic calls,
     or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
-    
+
     def __call__(
         self,
         samples: SampleFrame,
@@ -56,16 +59,14 @@ class Convergence:
         method: str,
         **kwargs,
     ) -> ConvergenceResult:
-        """Generic invocation using any registered criterion by name."""
+        """Invoke a registered convergence criterion generically by name."""
         criterion = registry.get(method)
         eval_frequency = kwargs.pop("eval_frequency", None)
         params = criterion.params_type(**kwargs)
 
         if eval_frequency is not None:
             if not getattr(criterion, "supports_eval_frequency", False):
-                raise TypeError(
-                    f"Criterion '{criterion.name}' does not support eval_frequency"
-                )
+                raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
             wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
             return wrapper.run(samples=samples, params=params)
 
@@ -84,9 +85,7 @@ class Convergence:
 
             if eval_frequency is not None:
                 if not getattr(criterion, "supports_eval_frequency", False):
-                    raise TypeError(
-                        f"Criterion '{criterion.name}' does not support eval_frequency"
-                    )
+                    raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
                 wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
                 return wrapper.run(samples=samples, params=params)
 

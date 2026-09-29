@@ -1,3 +1,5 @@
+"""Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold."""
+
 # Mandatory basic modules
 from __future__ import annotations
 
@@ -31,6 +33,7 @@ class CLTAbsoluteParams(BaseModel):
         description="Confidence level used for the CLT margin of error.",
     )
 
+
 # 2. Criterion logic (calculous)
 @registry.register()
 class CLTAbsoluteCriterion:
@@ -45,18 +48,18 @@ class CLTAbsoluteCriterion:
 
     params_type = CLTAbsoluteParams
 
-    assumptions = [
+    assumptions = (
         "Samples are independent and identically distributed (i.i.d.).",
         "The target quantity has finite variance.",
         "The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.",
-    ]
+    )
 
-    limitations = [
+    limitations = (
         "This is a probabilistic stopping criterion, not a proof of convergence.",
         "For small sample sizes, the normal approximation may be inaccurate.",
         "Does not detect systematic bias or non-stationarity in the sampling process.",
         "The stability window introduces a lag in detecting convergence.",
-    ]
+    )
 
     result_interpretation = (
         "is_converged is True when the CLT-based absolute error has stayed below "
@@ -75,9 +78,7 @@ samples = mcc.samples(df, it_col="it", target_col="value")
 result = mcc.convergence.clt_absolute(samples, threshold=0.1)
 print(result.is_converged)"""
 
-    references = [
-        "https://en.wikipedia.org/wiki/Central_limit_theorem",
-    ]
+    references = ("https://en.wikipedia.org/wiki/Central_limit_theorem",)
 
     def run(
         self,
@@ -86,32 +87,32 @@ print(result.is_converged)"""
     ) -> ConvergenceResult:
 
         target = pl.col(samples.target_col).cast(pl.Float64)
-        
-        agg_df = samples.df.select([
-            pl.len().alias("n"),
-            target.mean().alias("mean"),
-            target.std().alias("std")
-        ])
-        
+
+        agg_df = samples.df.select(
+            [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+        )
+
         final = agg_df.row(0, named=True)
         n = final["n"]
         mean = final["mean"]
         std = final["std"] if final["std"] is not None else 0.0
 
-        sem = std / (n ** 0.5) if n > 0 else 0.0
+        sem = std / (n**0.5) if n > 0 else 0.0
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
         abs_error = sem * z_score
-        
+
         is_converged = abs_error <= params.threshold
-        
-        final_df = pl.DataFrame({
-            "n": [n],
-            "mean": [mean],
-            "std": [std],
-            "sem": [sem],
-            "abs_error": [abs_error],
-            "is_converged": [is_converged],
-        })
+
+        final_df = pl.DataFrame(
+            {
+                "n": [n],
+                "mean": [mean],
+                "std": [std],
+                "sem": [sem],
+                "abs_error": [abs_error],
+                "is_converged": [is_converged],
+            }
+        )
 
         return ConvergenceResult(
             method=self.name,

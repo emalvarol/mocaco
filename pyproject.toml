@@ -36,10 +36,20 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "C4", "UP", "SIM", "TCH", "TID", "RUF"]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "SIM", "TCH", "TID", "RUF", "N", "PT", "D"]
+ignore = [
+    "E501", # Line length
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D107", # Missing docstring in __init__
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.format]
 quote-style = "double"
+docstring-code-format = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

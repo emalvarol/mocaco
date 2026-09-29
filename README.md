@@ -5,22 +5,6 @@ Convergence analysis for Monte Carlo series using Polars DataFrames.
 The library provides a simple API for applying different convergence and
 stopping criteria to Monte Carlo simulation results.
 
-## Installation
-
-Create the virtual environment and install the project in editable mode with `uv`:
-
-```bash
-uv venv
-uv sync
-uv pip install -e .
-```
-
-If it is needed to remove an old environment:
-
-```bash
-Remove-Item -Recurse -Force .venv
-```
-
 ## Quickstart
 
 ```python
@@ -37,10 +21,11 @@ samples = mcc.samples(df, it_col="it", target_col="value")
 result = mcc.convergence.clt_absolute(samples, threshold=0.01)
 
 # Inspect results
-print(result.is_converged)   # True/False
-print(result.estimate)       # Final cumulative mean
-print(result.error)          # Final CLT-based absolute error
-print(result.n)              # Number of samples
+print(result.is_converged)  # True/False
+print(result.estimate)  # Final cumulative mean
+print(result.error)  # Final CLT-based absolute error
+print(result.n)  # Number of samples
+# and more...
 ```
 
 ## API Overview
@@ -63,4 +48,27 @@ Full documentation is available in the `docs/` directory or can be built with:
 
 ```bash
 mkdocs serve
+```
+
+## Installation (Developers)
+
+### Environment
+
+Create the virtual environment and install the project in editable mode with `uv`:
+
+```bash
+uv venv
+uv sync
+uv pip install -e .
+```
+
+If it is needed to remove an old environment:
+
+```bash
+Remove-Item -Recurse -Force .venv
+```
+
+### Ruff
+```bash
+uv run ruff check --fix . && uv run ruff format .
 ```

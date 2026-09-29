@@ -1,9 +1,12 @@
+"""Module to format Result output from convergence methods."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import polars as pl
+if TYPE_CHECKING:
+    import polars as pl
 
 
 @dataclass(frozen=True)
@@ -35,10 +38,10 @@ class ConvergenceResult:
     estimate: float | None
     error: float | None
     is_converged: bool
-    
+
     # Build by Wrapper or by the criterion default
     data: pl.DataFrame
-    
+
     # Method-specific outputs
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
@@ -47,9 +50,11 @@ class ConvergenceResult:
         return self.data
 
     def __str__(self) -> str:
+        """Return the string representation of the underlying Polars DataFrame."""
         return str(self.data)
 
     def __repr__(self) -> str:
+        """Return a compact string representation of the result summary."""
         return (
             f"ConvergenceResult("
             f"method={self.method!r}, "

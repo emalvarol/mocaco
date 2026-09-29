@@ -1,7 +1,9 @@
+"""Module to generate the automatic documentation."""
 # Manual run:
 # python scripts/generate_docs.py
 
 from pathlib import Path
+
 from mocaco.registry import registry
 
 
@@ -15,11 +17,7 @@ def _format_param_table(params_type) -> str:
     ]
 
     for field_name, field_info in params_type.model_fields.items():
-        if field_info.is_required():
-            default = "*required*"
-        else:
-            default = f"`{field_info.default!r}`"
-
+        default = "*required*" if field_info.is_required() else f"`{field_info.default!r}`"
         type_name = str(field_info.annotation)
         desc = field_info.description or ""
 
@@ -73,6 +71,7 @@ def _generate_method_page(name: str, criterion) -> str:
 
 
 def generate_method_docs():
+    """Generate automatically the method documentation."""
     docs_dir = Path("docs/methods")
     docs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -85,6 +84,7 @@ def generate_method_docs():
 
 
 def generate_index_page():
+    """Generate automatically the page index."""
     lines = [
         "# Convergence Methods",
         "",
@@ -101,6 +101,7 @@ def generate_index_page():
 
 
 def main():
+    """Run all the pipeline."""
     generate_method_docs()
 
     index_content = generate_index_page()

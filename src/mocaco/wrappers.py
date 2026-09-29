@@ -1,3 +1,5 @@
+"""Criterion wrappers to expand evaluation behaviors."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -8,6 +10,8 @@ from .protocols import SampleFrame
 from .result import ConvergenceResult
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from .protocols import Criterion
 
 
@@ -39,11 +43,11 @@ class CriterionWrapper:
         return self._criterion.params_type
 
     @property
-    def assumptions(self) -> list[str]:
+    def assumptions(self) -> Sequence[str]:
         return self._criterion.assumptions
 
     @property
-    def limitations(self) -> list[str]:
+    def limitations(self) -> Sequence[str]:
         return self._criterion.limitations
 
     @property
@@ -55,7 +59,7 @@ class CriterionWrapper:
         return self._criterion.example_usage
 
     @property
-    def references(self) -> list[str]:
+    def references(self) -> Sequence[str]:
         return self._criterion.references
 
     def run(
@@ -94,9 +98,7 @@ class EvalFrequencyWrapper(CriterionWrapper):
     def __init__(self, criterion: Criterion, eval_frequency: int) -> None:
         super().__init__(criterion)
         if eval_frequency <= 0:
-            raise ValueError(
-                f"eval_frequency must be a positive integer, got {eval_frequency}"
-            )
+            raise ValueError(f"eval_frequency must be a positive integer, got {eval_frequency}")
         self._eval_frequency = eval_frequency
 
     @property
@@ -126,9 +128,7 @@ class EvalFrequencyWrapper(CriterionWrapper):
                 },
             )
 
-        eval_points = list(
-            range(self._eval_frequency, total_rows + 1, self._eval_frequency)
-        )
+        eval_points = list(range(self._eval_frequency, total_rows + 1, self._eval_frequency))
         if eval_points[-1] != total_rows:
             eval_points.append(total_rows)
 

@@ -1,3 +1,5 @@
+"""Module to automatically expose all addded methods."""
+
 import importlib
 import pkgutil
 

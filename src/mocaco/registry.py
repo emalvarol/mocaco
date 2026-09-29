@@ -1,16 +1,22 @@
+"""Registry of mocaco convergence methods."""
+
 from __future__ import annotations
 
-from dataclasses import MISSING, fields, is_dataclass
-from typing import Any, Callable, TypeVar, overload
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from .protocols import Criterion
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .protocols import Criterion
 
 C = TypeVar("C", bound=type)
 
 console = Console()
+
 
 class CriterionRegistry:
     def __init__(self) -> None:
@@ -23,7 +29,7 @@ class CriterionRegistry:
     # Overload 2: Programmatic usage (criterion instance provided)
     @overload
     def register(self, criterion: Criterion, *, overwrite: bool = False) -> Criterion: ...
-    
+
     def register(
         self,
         criterion: Criterion | None = None,
@@ -38,9 +44,7 @@ class CriterionRegistry:
                 raise ValueError("A criterion must define a non-empty name.")
 
             if name in self._criteria and not overwrite:
-                raise ValueError(
-                    f"Criterion {name!r} is already registered."
-                )
+                raise ValueError(f"Criterion {name!r} is already registered.")
 
             self._criteria[name] = criterion
             return criterion
@@ -59,8 +63,7 @@ class CriterionRegistry:
         except KeyError as exc:
             available = ", ".join(self.names())
             raise ValueError(
-                f"Unknown convergence criterion: {name!r}. "
-                f"Available criteria: {available}"
+                f"Unknown convergence criterion: {name!r}. Available criteria: {available}"
             ) from exc
 
     def names(self) -> tuple[str, ...]:
@@ -73,28 +76,28 @@ class CriterionRegistry:
         except KeyError:
             console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
             return None
-    
+
         # 2. Print the Method Name and Main Description in a Panel
         console.print()
         console.print(
             Panel(
-                f"{criterion.description}", 
+                f"{criterion.description}",
                 title=f"Method: [bold cyan]{name}[/bold cyan]",
                 title_align="left",
                 border_style="cyan",
-                expand=False
+                expand=False,
             )
         )
 
         # 3. Create a Table for the Parameters
         table = Table(
-            title="Parameters", 
-            title_style="bold magenta", 
-            title_justify="left", 
-            show_header=True, 
-            header_style="bold black on white"
+            title="Parameters",
+            title_style="bold magenta",
+            title_justify="left",
+            show_header=True,
+            header_style="bold black on white",
         )
-        
+
         table.add_column("Name", style="bold cyan", no_wrap=True)
         table.add_column("Type", style="green")
         table.add_column("Required", justify="center")
@@ -103,23 +106,17 @@ class CriterionRegistry:
 
         # 4. Introspect the Pydantic V2 model fields
         params_type = criterion.params_type
-        
+
         for field_name, field_info in params_type.model_fields.items():
             # Get type name cleanly
-            field_type = getattr(field_info.annotation, '__name__', str(field_info.annotation))
-            
+            field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
+
             is_required = field_info.is_required()
             req_icon = "[green]✔[/green]" if is_required else "[red]✘[/red]"
             default_val = "-" if is_required else repr(field_info.default)
             desc = field_info.description or "No description provided."
 
-            table.add_row(
-                field_name,
-                field_type,
-                req_icon,
-                default_val,
-                desc
-            )
+            table.add_row(field_name, field_type, req_icon, default_val, desc)
 
         # 5. Render the table
         console.print(table)

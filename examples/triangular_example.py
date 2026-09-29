@@ -2,6 +2,7 @@
 
 import polars as pl
 from scipy.stats import triang
+
 import mocaco as mcc
 
 # 50 samples from triangular(0, 10) with mode 5 (c=0.5)
