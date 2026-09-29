@@ -62,6 +62,7 @@ class Criterion(Protocol):
     """
 
     name: str
+    supports_eval_frequency: bool
     description: str
     params_type: type[Any]
     assumptions: list[str]

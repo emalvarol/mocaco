@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
+from .wrappers import EvalFrequencyWrapper
 
 if TYPE_CHECKING:
     import polars as pl
@@ -57,7 +58,17 @@ class Convergence:
     ) -> ConvergenceResult:
         """Generic invocation using any registered criterion by name."""
         criterion = registry.get(method)
+        eval_frequency = kwargs.pop("eval_frequency", None)
         params = criterion.params_type(**kwargs)
+
+        if eval_frequency is not None:
+            if not getattr(criterion, "supports_eval_frequency", False):
+                raise TypeError(
+                    f"Criterion '{criterion.name}' does not support eval_frequency"
+                )
+            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+            return wrapper.run(samples=samples, params=params)
+
         return criterion.run(
             samples=samples,
             params=params,
@@ -68,7 +79,17 @@ class Convergence:
         criterion = registry.get(name)
 
         def _method(samples: SampleFrame, **kwargs):
+            eval_frequency = kwargs.pop("eval_frequency", None)
             params = criterion.params_type(**kwargs)
+
+            if eval_frequency is not None:
+                if not getattr(criterion, "supports_eval_frequency", False):
+                    raise TypeError(
+                        f"Criterion '{criterion.name}' does not support eval_frequency"
+                    )
+                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+                return wrapper.run(samples=samples, params=params)
+
             return criterion.run(samples=samples, params=params)
 
         return _method

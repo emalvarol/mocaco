@@ -7,11 +7,11 @@ from .result import ConvergenceResult
 
 def samples(df: pl.DataFrame, *, target_col: str, it_col: Optional[str] = None) -> SampleFrame: ...
 def methods() -> tuple[str, ...]: ...
-def describe(method: str) -> dict: ...
+def describe(name: str) -> dict | None: ...
 
 class Convergence:
     def __call__(self, samples: SampleFrame, *, method: str, **kwargs) -> ConvergenceResult: ...
-    def clt_absolute(self, samples: SampleFrame, *, threshold: float, confidence_level: float = 0.95, stb_window: int = 30) -> ConvergenceResult:
+    def clt_absolute(self, samples: SampleFrame, *, threshold: float, confidence_level: float = 0.95, eval_frequency: int = 1) -> ConvergenceResult:
         """
         Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
 
@@ -21,8 +21,8 @@ class Convergence:
             Maximum accepted absolute Monte Carlo error.
         confidence_level : float, default 0.95
             Confidence level used for the CLT margin of error.
-        stb_window : int, default 30
-            Minimum number of consecutive iterations meeting the threshold.
+        eval_frequency : int, default 1
+            Number of rows between successive evaluations.
         """
         ...
 convergence: Convergence

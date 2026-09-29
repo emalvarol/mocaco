@@ -36,6 +36,8 @@ class CLTAbsoluteParams(BaseModel):
 class CLTAbsoluteCriterion:
     name = "clt_absolute"
 
+    supports_eval_frequency = True
+
     description = (
         "Central Limit Theorem based convergence criterion "
         "using an absolute Monte Carlo error threshold."
