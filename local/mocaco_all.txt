@@ -20,11 +20,56 @@ uv sync
 uv pip install -e .
 ```
 
-If it is needed to remove an old environment
+If it is needed to remove an old environment:
 
 ```bash
 Remove-Item -Recurse -Force .venv
 ```
+
+## Quickstart
+
+```python
+import polars as pl
+import mocaco as mcc
+
+# Prepare your Monte Carlo samples
+df = pl.DataFrame({"it": range(1000), "value": your_samples})
+
+# Create a normalized sample frame
+samples = mcc.samples(df, it_col="it", target_col="value")
+
+# Run a convergence criterion
+result = mcc.convergence.clt_absolute(samples, threshold=0.01)
+
+# Inspect results
+print(result.is_converged)   # True/False
+print(result.estimate)       # Final cumulative mean
+print(result.error)          # Final CLT-based absolute error
+print(result.n)              # Number of samples
+```
+
+## API Overview
+
+| Function | Description |
+|----------|-------------|
+| `mcc.samples(df, it_col, target_col)` | Create a normalized sample frame from a Polars DataFrame |
+| `mcc.convergence(samples, method="...")` | Generic invocation of any registered criterion |
+| `mcc.convergence.clt_absolute(samples, ...)` | Typed invocation of a specific criterion |
+| `mcc.methods()` | List all registered convergence criteria |
+| `mcc.describe("clt_absolute")` | Get metadata and parameter info for a criterion |
+
+## Available Methods
+
+- [`clt_absolute`](docs/methods/clt_absolute.md) — CLT-based absolute error threshold
+
+## Documentation
+
+Full documentation is available in the `docs/` directory or can be built with:
+
+```bash
+mkdocs serve
+```
+
 
 ========================================
 File: src/mocaco/api.py
@@ -32,7 +77,7 @@ File: src/mocaco/api.py
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
@@ -47,8 +92,8 @@ if TYPE_CHECKING:
 def samples(
     df: pl.DataFrame,
     *,
-    it_col: str | None,
     target_col: str,
+    it_col: Optional[str] = None,
 ) -> SampleFrame:
     """
     Create the normalized and frozen data representation used by convergence criteria.
@@ -67,8 +112,8 @@ def samples(
     """
     return SampleFrame(
         df=df,
-        it_col=it_col,
         target_col=target_col,
+        it_col=it_col,
     )
 
 
@@ -114,9 +159,9 @@ def methods() -> tuple[str, ...]:
     return registry.names()
 
 
-def describe(method: str) -> dict:
+def describe(name: str) -> dict | None:
     """Return metadata and parameter information for a criterion."""
-    return registry.describe(method)
+    return registry.describe(name)
 
 
 ========================================
@@ -152,8 +197,8 @@ class SampleFrame:
     """
 
     df: pl.DataFrame
-    it_col: str | None
     target_col: str
+    it_col: str | None = None
 
     def __post_init__(self) -> None:
         if self.it_col is None:
@@ -189,6 +234,11 @@ class Criterion(Protocol):
     name: str
     description: str
     params_type: type[Any]
+    assumptions: list[str]
+    limitations: list[str]
+    result_interpretation: str
+    example_usage: str
+    references: list[str]
 
     def run(
         self,
@@ -205,32 +255,57 @@ File: src/mocaco/registry.py
 from __future__ import annotations
 
 from dataclasses import MISSING, fields, is_dataclass
-from typing import Any
+from typing import Any, Callable, TypeVar, overload
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
 
 from .protocols import Criterion
 
+C = TypeVar("C", bound=type)
+
+console = Console()
 
 class CriterionRegistry:
     def __init__(self) -> None:
         self._criteria: dict[str, Criterion] = {}
 
+    # Overload 1: Decorator usage (no criterion provided)
+    @overload
+    def register(self, criterion: None = None, *, overwrite: bool = False) -> Callable[[C], C]: ...
+
+    # Overload 2: Programmatic usage (criterion instance provided)
+    @overload
+    def register(self, criterion: Criterion, *, overwrite: bool = False) -> Criterion: ...
+    
     def register(
         self,
-        criterion: Criterion,
+        criterion: Criterion | None = None,
         *,
         overwrite: bool = False,
-    ) -> None:
-        name = criterion.name
+    ) -> Any:
+        # 1. Programmatic use: registry.register(MyCriterion())
+        if criterion is not None:
+            name = criterion.name
 
-        if not name:
-            raise ValueError("A criterion must define a non-empty name.")
+            if not name:
+                raise ValueError("A criterion must define a non-empty name.")
 
-        if name in self._criteria and not overwrite:
-            raise ValueError(
-                f"Criterion {name!r} is already registered."
-            )
+            if name in self._criteria and not overwrite:
+                raise ValueError(
+                    f"Criterion {name!r} is already registered."
+                )
 
-        self._criteria[name] = criterion
+            self._criteria[name] = criterion
+            return criterion
+
+        # 2. Decorator use: @registry.register()
+        def wrapper(cls: C) -> C:
+            instance = cls()
+            self.register(instance, overwrite=overwrite)
+            return cls
+
+        return wrapper
 
     def get(self, name: str) -> Criterion:
         try:
@@ -245,36 +320,64 @@ class CriterionRegistry:
     def names(self) -> tuple[str, ...]:
         return tuple(self._criteria.keys())
 
-    def describe(self, name: str) -> dict[str, Any]:
-        criterion = self.get(name)
+    def describe(self, name: str) -> dict[str, Any] | None:
+        # 1. Fetch the criterion from the registry
+        try:
+            criterion = registry.get(name)
+        except KeyError:
+            console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
+            return None
+    
+        # 2. Print the Method Name and Main Description in a Panel
+        console.print()
+        console.print(
+            Panel(
+                f"{criterion.description}", 
+                title=f"Method: [bold cyan]{name}[/bold cyan]",
+                title_align="left",
+                border_style="cyan",
+                expand=False
+            )
+        )
+
+        # 3. Create a Table for the Parameters
+        table = Table(
+            title="Parameters", 
+            title_style="bold magenta", 
+            title_justify="left", 
+            show_header=True, 
+            header_style="bold black on white"
+        )
+        
+        table.add_column("Name", style="bold cyan", no_wrap=True)
+        table.add_column("Type", style="green")
+        table.add_column("Required", justify="center")
+        table.add_column("Default", style="yellow")
+        table.add_column("Description", style="dim")
+
+        # 4. Introspect the Pydantic V2 model fields
         params_type = criterion.params_type
+        
+        for field_name, field_info in params_type.model_fields.items():
+            # Get type name cleanly
+            field_type = getattr(field_info.annotation, '__name__', str(field_info.annotation))
+            
+            is_required = field_info.is_required()
+            req_icon = "[green]✔[/green]" if is_required else "[red]✘[/red]"
+            default_val = "-" if is_required else repr(field_info.default)
+            desc = field_info.description or "No description provided."
 
-        parameters: dict[str, Any] = {}
+            table.add_row(
+                field_name,
+                field_type,
+                req_icon,
+                default_val,
+                desc
+            )
 
-        if is_dataclass(params_type):
-            for field in fields(params_type):
-                if field.default is not MISSING:
-                    default = field.default
-                elif field.default_factory is not MISSING:
-                    default = "<factory>"
-                else:
-                    default = "<required>"
-
-                parameters[field.name] = {
-                    "type": field.type,
-                    "default": default,
-                    "description": field.metadata.get(
-                        "description",
-                        "",
-                    ),
-                }
-
-        return {
-            "name": criterion.name,
-            "description": criterion.description,
-            "parameters": parameters,
-            "params_type": params_type,
-        }
+        # 5. Render the table
+        console.print(table)
+        console.print()
 
 
 registry = CriterionRegistry()
@@ -301,9 +404,7 @@ class ConvergenceResult:
     ----------
     method
         Name of the convergence criterion.
-    data
-        Full diagnostic DataFrame generated by the criterion.
-    converged
+    is_converged
         Whether the final evaluated state satisfies the criterion.
     estimate
         Final estimate of the target quantity.
@@ -311,22 +412,21 @@ class ConvergenceResult:
         Final estimated error.
     n
         Number of samples used in the final estimate.
+    data
+        Full diagnostic DataFrame generated by the criterion.
     diagnostics
         Method-specific diagnostic information.
     """
 
+    # Common outputs
     method: str
-    data: pl.DataFrame
-    converged: bool
+    is_converged: bool
     estimate: float | None
     error: float | None
     n: int
+    # Method-specific outputs
+    data: pl.DataFrame
     diagnostics: dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def is_converged(self) -> bool:
-        """Alias for ``converged``."""
-        return self.converged
 
     def to_polars(self) -> pl.DataFrame:
         """Return the complete diagnostic DataFrame."""
@@ -339,7 +439,7 @@ class ConvergenceResult:
         return (
             f"ConvergenceResult("
             f"method={self.method!r}, "
-            f"converged={self.converged!r}, "
+            f"is_converged={self.is_converged!r}, "
             f"estimate={self.estimate!r}, "
             f"error={self.error!r}, "
             f"n={self.n!r}"
@@ -365,14 +465,18 @@ __all__ = [
 File: src/mocaco/methods/clt_absolute.py
 ========================================
 
+# Mandatory basic modules
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+# Basic modules used to build the criterion (According contributor needs)
 import polars as pl
 from pydantic import BaseModel, Field
 from scipy.stats import norm
 
+# Modules needed from mocaco
+from mocaco.registry import registry
 from mocaco.result import ConvergenceResult
 
 if TYPE_CHECKING:
@@ -402,6 +506,7 @@ class CLTAbsoluteParams(BaseModel):
 
 
 # 2. Criterion logic (calculous)
+@registry.register()
 class CLTAbsoluteCriterion:
     name = "clt_absolute"
 
@@ -411,6 +516,40 @@ class CLTAbsoluteCriterion:
     )
 
     params_type = CLTAbsoluteParams
+
+    assumptions = [
+        "Samples are independent and identically distributed (i.i.d.).",
+        "The target quantity has finite variance.",
+        "The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.",
+    ]
+
+    limitations = [
+        "This is a probabilistic stopping criterion, not a proof of convergence.",
+        "For small sample sizes, the normal approximation may be inaccurate.",
+        "Does not detect systematic bias or non-stationarity in the sampling process.",
+        "The stability window introduces a lag in detecting convergence.",
+    ]
+
+    result_interpretation = (
+        "is_converged is True when the CLT-based absolute error has stayed below "
+        "the threshold for at least stb_window consecutive iterations. "
+        "estimate is the cumulative mean at the final sample. "
+        "error is the CLT-based absolute error (z_score * SEM) at the final sample. "
+        "n is the total number of samples evaluated."
+    )
+
+    example_usage = """\
+import polars as pl
+import mocaco as mcc
+
+df = pl.DataFrame({"it": range(100), "value": [1.0] * 100})
+samples = mcc.samples(df, it_col="it", target_col="value")
+result = mcc.convergence.clt_absolute(samples, threshold=0.1)
+print(result.is_converged)"""
+
+    references = [
+        "https://en.wikipedia.org/wiki/Central_limit_theorem",
+    ]
 
     def run(
         self,
@@ -466,7 +605,7 @@ class CLTAbsoluteCriterion:
         return ConvergenceResult(
             method=self.name,
             data=result_df,
-            converged=bool(final["is_converged"]),
+            is_converged=bool(final["is_converged"]),
             estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
             error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
             n=int(final["cum_n"]),
@@ -485,13 +624,9 @@ class CLTAbsoluteCriterion:
 File: src/mocaco/methods/__init__.py
 ========================================
 
-from mocaco.registry import registry
+import importlib
+import pkgutil
 
-from .clt_absolute import CLTAbsoluteCriterion
-
-registry.register(CLTAbsoluteCriterion())
-
-__all__ = [
-    "CLTAbsoluteCriterion",
-]
+for _, module_name, _ in pkgutil.iter_modules(__path__):
+    importlib.import_module(f"{__name__}.{module_name}")
 

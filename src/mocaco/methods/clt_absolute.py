@@ -31,13 +31,6 @@ class CLTAbsoluteParams(BaseModel):
         description="Confidence level used for the CLT margin of error.",
     )
 
-    stb_window: int = Field(
-        30,
-        ge=1,
-        description="Minimum number of consecutive iterations meeting the threshold.",
-    )
-
-
 # 2. Criterion logic (calculous)
 @registry.register()
 class CLTAbsoluteCriterion:
@@ -90,64 +83,44 @@ print(result.is_converged)"""
         params: CLTAbsoluteParams,
     ) -> ConvergenceResult:
 
-        df = samples.df.sort(samples.it_col)
-
         target = pl.col(samples.target_col).cast(pl.Float64)
+        
+        agg_df = samples.df.select([
+            pl.len().alias("n"),
+            target.mean().alias("mean"),
+            target.std().alias("std")
+        ])
+        
+        final = agg_df.row(0, named=True)
+        n = final["n"]
+        mean = final["mean"]
+        std = final["std"] if final["std"] is not None else 0.0
 
-        n = target.cum_count()
-
-        cum_sum = target.cum_sum()
-        cum_sum_sq = (target**2).cum_sum()
-
-        # Sample variance:
-        #
-        # s²_n =
-        #     [sum(x²) - sum(x)² / n] / (n - 1)
-        #
-        cum_var = (cum_sum_sq - (cum_sum**2) / n) / (n - 1)
-
-        cum_std = pl.when(n > 1).then(cum_var.clip(lower_bound=0.0).sqrt()).otherwise(0.0)
-
-        sem = cum_std / n.sqrt()
-
+        sem = std / (n ** 0.5) if n > 0 else 0.0
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
-
         abs_error = sem * z_score
-
-        meets_threshold = abs_error <= params.threshold
-
-        is_converged = (
-            meets_threshold.cast(pl.Int32).rolling_sum(window_size=params.stb_window).fill_null(0)
-            == params.stb_window
-        )
-
-        result_df = df.with_columns(
-            [
-                n.alias("cum_n"),
-                (cum_sum / n).alias("cum_mean"),
-                cum_std.alias("cum_std"),
-                sem.alias("sem"),
-                abs_error.alias("abs_error"),
-                meets_threshold.alias("meets_threshold"),
-                is_converged.alias("is_converged"),
-            ]
-        )
-
-        final = result_df.tail(1).to_dicts()[0]
+        
+        is_converged = abs_error <= params.threshold
+        
+        final_df = pl.DataFrame({
+            "n": [n],
+            "mean": [mean],
+            "std": [std],
+            "sem": [sem],
+            "abs_error": [abs_error],
+            "is_converged": [is_converged],
+        })
 
         return ConvergenceResult(
             method=self.name,
-            data=result_df,
-            is_converged=bool(final["is_converged"]),
-            estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
-            error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
-            n=int(final["cum_n"]),
+            n=int(n),
+            estimate=float(mean) if mean is not None else None,
+            error=float(abs_error),
+            is_converged=is_converged,
+            data=final_df,
             diagnostics={
                 "threshold": params.threshold,
                 "confidence_level": params.confidence_level,
-                "stb_window": params.stb_window,
                 "z_score": z_score,
-                "it_col": samples.it_col,
-                "target_col": samples.target_col,
             },
         )
