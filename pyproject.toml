@@ -19,9 +19,11 @@ dependencies = [
 dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.8",
+    "mypy>=2.3.1",
     "ty>=0.0.84",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.7.7",
+    "mypy>=2.3.1",
 ]
 
 [build-system]
@@ -58,3 +60,23 @@ addopts = "-q --strict-markers"
 
 [tool.coverage.run]
 source = ["mocaco"]
+
+[tool.mypy]
+python_version = "3.12"
+# Enables a bundle of strict checks (disallow_untyped_defs, check_untyped_defs, etc.)
+strict = true
+# Forces you to explicitly handle cases where a variable might be None
+strict_optional = true
+# Warns if you return an 'Any' type from a function that expects a specific type
+warn_return_any = true
+# Warns if you leave a '# type: ignore' comment that is no longer needed
+warn_unused_ignores = true
+# Shows error codes in the output so you can easily silence specific ones if needed
+show_error_codes = true
+
+# Exceptions for third-party libraries without strict type hints
+[[tool.mypy.overrides]]
+module = [
+    "scipy.*",
+]
+ignore_missing_imports = true

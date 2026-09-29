@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
@@ -10,6 +10,8 @@ from .registry import registry
 from .wrappers import EvalFrequencyWrapper
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import polars as pl
 
     from .result import ConvergenceResult
@@ -57,7 +59,7 @@ class Convergence:
         samples: SampleFrame,
         *,
         method: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> ConvergenceResult:
         """Invoke a registered convergence criterion generically by name."""
         criterion = registry.get(method)
@@ -75,11 +77,11 @@ class Convergence:
             params=params,
         )
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         """Resolve registered criteria as callable attributes."""
         criterion = registry.get(name)
 
-        def _method(samples: SampleFrame, **kwargs):
+        def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
             eval_frequency = kwargs.pop("eval_frequency", None)
             params = criterion.params_type(**kwargs)
 
@@ -102,6 +104,6 @@ def methods() -> tuple[str, ...]:
     return registry.names()
 
 
-def describe(name: str) -> dict | None:
+def describe(name: str) -> None:
     """Return metadata and parameter information for a criterion."""
     return registry.describe(name)

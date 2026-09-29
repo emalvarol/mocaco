@@ -68,7 +68,12 @@ If it is needed to remove an old environment:
 Remove-Item -Recurse -Force .venv
 ```
 
-### Ruff
+### ruff
 ```bash
 uv run ruff check --fix . && uv run ruff format .
+```
+
+### mypy
+```bash
+uv run mypy src/
 ```

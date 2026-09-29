@@ -69,13 +69,13 @@ class CriterionRegistry:
     def names(self) -> tuple[str, ...]:
         return tuple(self._criteria.keys())
 
-    def describe(self, name: str) -> dict[str, Any] | None:
+    def describe(self, name: str) -> None:
         # 1. Fetch the criterion from the registry
         try:
             criterion = registry.get(name)
         except KeyError:
             console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
-            return None
+            return
 
         # 2. Print the Method Name and Main Description in a Panel
         console.print()

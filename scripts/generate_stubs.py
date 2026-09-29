@@ -32,17 +32,16 @@ def generate_api_stub():
         "from __future__ import annotations",
         "",
         "import polars as pl",
-        "from typing import Optional",  # 2. Added this to support your new Optional[str]
+        "from typing import Optional, Any",  # 1. Add Any here
         "from .protocols import SampleFrame",
         "from .result import ConvergenceResult",
         "",
-        # 3. Replace the hardcoded strings with our dynamic helper
         get_function_stub(samples),
         get_function_stub(methods),
         get_function_stub(describe),
         "",
         "class Convergence:",
-        "    def __call__(self, samples: SampleFrame, *, method: str, **kwargs) -> ConvergenceResult: ...",
+        "    def __call__(self, samples: SampleFrame, *, method: str, **kwargs: Any) -> ConvergenceResult: ...",
     ]
 
     # Iterate over all registered criteria

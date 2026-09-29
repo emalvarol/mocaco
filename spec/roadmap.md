@@ -5,7 +5,7 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 
 ## General (steps to reach 1.0.0 version)
 - [x] 1. ruff configuration
-- [ ] 2. Type checking strict configuration
+- [x] 2. Type checking strict configuration
 - [ ] 3. input valitadion and edge case handling (NaN, Inf, Null). Update SampleFrame
 - [ ] 4. Add a rich summary for results. Update ConvergenceResults
 - [ ] 5. Basic plotting capabilities and export hooks (to_pandas, to_polars)

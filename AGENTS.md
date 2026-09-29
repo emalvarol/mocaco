@@ -8,4 +8,4 @@ You are a agent with expert on python but align with the developer rules of this
 4. Ask any clarification before doing changes if the user do not provide enough instructions.
 5. Despite test are part of the constitution, add them only under user requests
 6. Do not modify the pyproject.toml file except if user request it explicitly.
-7. Run `uv run ruff check --fix . && uv run ruff format .` after each modification to verify "All checks passed!"
+7. Run `uv run ruff check --fix . && uv run ruff format .` to verify "All checks passed!" AND `uv run mypy src/` to verify "Sucess: no issues found in..." after each modification.
