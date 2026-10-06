@@ -5,6 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
 if TYPE_CHECKING:
     import polars as pl
 
@@ -48,6 +52,47 @@ class ConvergenceResult:
     def to_polars(self) -> pl.DataFrame:
         """Return the complete diagnostic DataFrame."""
         return self.data
+
+    def summary(self) -> None:
+        """Print a rich formatted summary of the convergence result to the console."""
+        console = Console()
+
+        # Define status colors and icons
+        status_color = "green" if self.is_converged else "yellow"
+        status_icon = "✔" if self.is_converged else "⚠"
+        status_text = "Converged" if self.is_converged else "Not Converged"
+
+        # Create the inner layout table
+        table = Table(show_header=False, box=None, padding=(0, 2))
+        table.add_row("[bold]Method:[/bold]", f"[cyan]{self.method}[/cyan]")
+        table.add_row("[bold]Status:[/bold]", f"[{status_color}]{status_icon} {status_text}[/{status_color}]")
+        table.add_row("[bold]Samples (n):[/bold]", str(self.n))
+        est_str = f"{self.estimate:.6g}" if self.estimate is not None else "-"
+        table.add_row("[bold]Estimate:[/bold]", est_str)
+        err_str = f"{self.error:.6g}" if self.error is not None else "-"
+        table.add_row("[bold]Error:[/bold]", err_str)
+
+        # Append diagnostics dynamically if they exist
+        if self.diagnostics:
+            table.add_row("", "")  # Spacer
+            table.add_row("[bold italic]Diagnostics:[/bold italic]", "")
+            for key, value in self.diagnostics.items():
+                # Format floats cleanly, otherwise just cast to str
+                val_str = f"{value:.6g}" if isinstance(value, float) else str(value)
+                table.add_row(f"  {key}:", val_str)
+
+        # Wrap in a stylized panel
+        panel = Panel(
+            table,
+            title="[bold]Convergence Summary[/bold]",
+            title_align="left",
+            border_style=status_color,
+            expand=False,
+        )
+
+        console.print()
+        console.print(panel)
+        console.print()
 
     def __str__(self) -> str:
         """Return the string representation of the underlying Polars DataFrame."""

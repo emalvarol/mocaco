@@ -7,7 +7,7 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 - [x] 1. ruff configuration
 - [x] 2. Type checking strict configuration
 - [x] 3. input valitadion and edge case handling (NaN, Inf, Null). Update SampleFrame
-- [ ] 4. Add a rich summary for results. Update ConvergenceResults
+- [x] 4. Add a rich summary for results. Update ConvergenceResults
 - [ ] 5. Basic plotting capabilities and export hooks (to_pandas, to_polars)
 - [ ] 6. Comprehensive test coverage
 - [ ] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.9, 3.10, 3.11 y 3.12) and every pull request and push to main

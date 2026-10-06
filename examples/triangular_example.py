@@ -16,10 +16,12 @@ mcc.describe("clt_absolute")
 samples = mcc.samples(df, target_col="value")
 result = mcc.convergence.clt_absolute(
     samples,
-    threshold=1.0,
+    threshold=0.7,
     eval_frequency=5,
 )
 with pl.Config(tbl_rows=-1):
     print(result.method)
     print(result.is_converged)
     print(result)
+
+result.summary()
