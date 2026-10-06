@@ -117,9 +117,13 @@ class EvalFrequencyWrapper(CriterionWrapper):
             return ConvergenceResult(
                 method=result.method,
                 n=result.n,
+                n_col=result.n_col,
                 estimate=result.estimate,
+                estimate_col=result.estimate_col,
                 error=result.error,
+                error_col=result.error_col,
                 is_converged=result.is_converged,
+                is_converged_col=result.is_converged_col,
                 data=result.data,
                 diagnostics={
                     **result.diagnostics,
@@ -150,9 +154,13 @@ class EvalFrequencyWrapper(CriterionWrapper):
         return ConvergenceResult(
             method=final.method,
             n=final.n,
+            n_col=final.n_col,
             estimate=final.estimate,
+            estimate_col=final.estimate_col,
             error=final.error,
+            error_col=final.error_col,
             is_converged=final.is_converged,
+            is_converged_col=final.is_converged_col,
             data=combined_data,
             diagnostics={
                 **final.diagnostics,

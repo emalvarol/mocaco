@@ -117,9 +117,13 @@ print(result.is_converged)"""
         return ConvergenceResult(
             method=self.name,
             n=int(n),
+            n_col="n",
             estimate=float(mean) if mean is not None else None,
+            estimate_col="mean",
             error=float(abs_error),
+            error_col="abs_error",
             is_converged=is_converged,
+            is_converged_col="is_converged",
             data=final_df,
             diagnostics={
                 "threshold": params.threshold,

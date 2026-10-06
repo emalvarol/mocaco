@@ -13,6 +13,10 @@ dependencies = [
     "pydantic>=2.13.5",
     "scipy>=1.18.1",
     "rich>=15.0.0",
+    "pandas>=3.0.6",
+    "numpy>=2.5.3",
+    "pyarrow>=25.0.1",
+    "matplotlib>=3.11.2",
 ]
 
 [dependency-groups]

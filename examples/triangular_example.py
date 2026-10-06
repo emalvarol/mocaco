@@ -21,7 +21,15 @@ result = mcc.convergence.clt_absolute(
 )
 with pl.Config(tbl_rows=-1):
     print(result.method)
+    print(result.n)
     print(result.is_converged)
     print(result)
 
 result.summary()
+
+# Export hooks
+df_polars = result.to_polars()
+df_pandas = result.to_pandas()
+
+# Plots
+ax = result.plot.evolution(show=True)
