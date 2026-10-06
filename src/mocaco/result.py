@@ -24,7 +24,7 @@ class ResultPlotter:
     def evolution(
         self,
         *,
-        show: bool = True,
+        show: bool = False,
     ) -> Any:
         """
         Plot the evolution of the estimate, the error band, and the convergence point.

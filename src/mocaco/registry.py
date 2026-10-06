@@ -73,7 +73,7 @@ class CriterionRegistry:
         # 1. Fetch the criterion from the registry
         try:
             criterion = registry.get(name)
-        except KeyError:
+        except ValueError:
             console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
             return
 

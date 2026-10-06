@@ -211,15 +211,18 @@ class SampleFrame:
 
     def __post_init__(self) -> None:
         
+        # 1. Resolve and normalize it_col name
         if self.it_col is None:
-            new_df = self.df.with_columns(pl.arange(1, len(self.df) + 1).alias("it"))
+            it_col_name = "it"
+            new_df = self.df.with_columns(pl.arange(1, len(self.df) + 1).alias(it_col_name))
             object.__setattr__(self, "df", new_df)
-            object.__setattr__(self, "it_col", "it")
+            object.__setattr__(self, "it_col", it_col_name)
             logger.info("it_col was None — auto-created column 'it' with sequential indices.")
-            return
+        else:
+            it_col_name = self.it_col
 
-        missing = [col for col in (self.it_col, self.target_col) if col not in self.df.columns]
-
+        # 2. Validate structural integrity (it_col_name is guaranteed to be str here)
+        missing = [col for col in (it_col_name, self.target_col) if col not in self.df.columns]
         if missing:
             raise ValueError(
                 f"Columns not found in DataFrame: {missing}. Available columns: {self.df.columns}"
@@ -228,6 +231,28 @@ class SampleFrame:
         if self.df.is_empty():
             raise ValueError("The sample DataFrame cannot be empty.")
 
+        # 3. Validate Data Types (it_col and target_col must be numeric)
+        it_dtype = self.df.get_column(it_col_name).dtype
+        if not it_dtype.is_numeric():
+            raise TypeError(
+                f"Iteration column '{it_col_name}' must be numeric (int or float), got {it_dtype}."
+            )
+
+        target = self.df.get_column(self.target_col)
+        if not target.dtype.is_numeric():
+            raise TypeError(
+                f"Target column '{self.target_col}' must be numeric (int or float), got {target.dtype}."
+            )
+
+        # 4. Input validation and edge case handling (Null, NaN, Inf)
+        if target.is_null().any():
+            raise ValueError(f"Target column '{self.target_col}' contains Null (missing) values.")
+
+        if target.dtype in (pl.Float32, pl.Float64):
+            if target.is_nan().any():
+                raise ValueError(f"Target column '{self.target_col}' contains NaN values.")
+            if target.is_infinite().any():
+                raise ValueError(f"Target column '{self.target_col}' contains Infinite (Inf) values.")
 
 class Criterion(Protocol):
     
@@ -393,8 +418,82 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+import matplotlib.pyplot as plt
+import polars as pl
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
 if TYPE_CHECKING:
-    import polars as pl
+    import pandas as pd
+
+
+class ResultPlotter:
+    
+
+    def __init__(self, result: ConvergenceResult) -> None:
+        self.result = result
+
+    def evolution(
+        self,
+        *,
+        show: bool = False,
+    ) -> Any:
+        
+        df = self.result.data
+
+        # Ensure required columns exist
+        missing = [col for col in (
+            self.result.estimate_col,
+            self.result.error_col,
+            self.result.n_col,
+            self.result.is_converged_col
+        ) if col not in self.result.data.columns]
+        if missing:
+            raise ValueError(f"Columns not found in diagnostic data for plotting: {missing}")
+
+        # Extract arrays
+        n_vals = df.get_column(self.result.n_col).to_numpy()
+        estimate_vals = df.get_column(self.result.estimate_col).to_numpy()
+        error_vals = df.get_column(self.result.error_col).to_numpy()
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        # Plot estimate line
+        ax.plot(n_vals, estimate_vals, label="Estimate", color="#1f77b4", linewidth=2)
+
+        # Plot error band
+        ax.fill_between(
+            n_vals,
+            estimate_vals - error_vals,
+            estimate_vals + error_vals,
+            color="#1f77b4",
+            alpha=0.2,
+            label="Error Band",
+        )
+
+        # Plot vertical line for convergence (first True occurrence)
+        converged_df = df.filter(pl.col(self.result.is_converged_col))
+        if not converged_df.is_empty():
+            first_converged_n = converged_df.get_column(self.result.n_col)[0]
+            ax.axvline(
+                x=first_converged_n,
+                color="red",
+                linestyle="--",
+                label=f"Converged at n={first_converged_n}",
+            )
+
+        ax.set_xlabel("Number of samples (n)")
+        ax.set_ylabel("Estimate")
+        ax.set_title(f"Convergence Evolution ({self.result.method})")
+        ax.legend()
+        ax.grid(True, linestyle=":", alpha=0.7)
+
+        if show:
+            plt.show()
+            plt.close(fig)
+
+        return ax
 
 
 @dataclass(frozen=True)
@@ -404,9 +503,13 @@ class ConvergenceResult:
     # Common outputs to all criterions
     method: str
     n: int
+    n_col: str
     estimate: float | None
+    estimate_col: str
     error: float | None
-    is_converged: bool
+    error_col: str
+    is_converged: bool | None
+    is_converged_col: str
 
     # Build by Wrapper or by the criterion default
     data: pl.DataFrame
@@ -414,9 +517,59 @@ class ConvergenceResult:
     # Method-specific outputs
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def plot(self) -> ResultPlotter:
+        
+        return ResultPlotter(self)
+
     def to_polars(self) -> pl.DataFrame:
         
         return self.data
+
+    def to_pandas(self) -> pd.DataFrame:
+        
+        return self.data.to_pandas()
+
+    def summary(self) -> None:
+        
+        console = Console()
+
+        # Define status colors and icons
+        status_color = "green" if self.is_converged else "yellow"
+        status_icon = "✔" if self.is_converged else "⚠"
+        status_text = "Converged" if self.is_converged else "Not Converged"
+
+        # Create the inner layout table
+        table = Table(show_header=False, box=None, padding=(0, 2))
+        table.add_row("[bold]Method:[/bold]", f"[cyan]{self.method}[/cyan]")
+        table.add_row("[bold]Status:[/bold]", f"[{status_color}]{status_icon} {status_text}[/{status_color}]")
+        table.add_row("[bold]Samples (n):[/bold]", str(self.n))
+        est_str = f"{self.estimate:.6g}" if self.estimate is not None else "-"
+        table.add_row("[bold]Estimate:[/bold]", est_str)
+        err_str = f"{self.error:.6g}" if self.error is not None else "-"
+        table.add_row("[bold]Error:[/bold]", err_str)
+
+        # Append diagnostics dynamically if they exist
+        if self.diagnostics:
+            table.add_row("", "")  # Spacer
+            table.add_row("[bold italic]Diagnostics:[/bold italic]", "")
+            for key, value in self.diagnostics.items():
+                # Format floats cleanly, otherwise just cast to str
+                val_str = f"{value:.6g}" if isinstance(value, float) else str(value)
+                table.add_row(f"  {key}:", val_str)
+
+        # Wrap in a stylized panel
+        panel = Panel(
+            table,
+            title="[bold]Convergence Summary[/bold]",
+            title_align="left",
+            border_style=status_color,
+            expand=False,
+        )
+
+        console.print()
+        console.print(panel)
+        console.print()
 
     def __str__(self) -> str:
         
@@ -527,9 +680,13 @@ class EvalFrequencyWrapper(CriterionWrapper):
             return ConvergenceResult(
                 method=result.method,
                 n=result.n,
+                n_col=result.n_col,
                 estimate=result.estimate,
+                estimate_col=result.estimate_col,
                 error=result.error,
+                error_col=result.error_col,
                 is_converged=result.is_converged,
+                is_converged_col=result.is_converged_col,
                 data=result.data,
                 diagnostics={
                     **result.diagnostics,
@@ -560,9 +717,13 @@ class EvalFrequencyWrapper(CriterionWrapper):
         return ConvergenceResult(
             method=final.method,
             n=final.n,
+            n_col=final.n_col,
             estimate=final.estimate,
+            estimate_col=final.estimate_col,
             error=final.error,
+            error_col=final.error_col,
             is_converged=final.is_converged,
+            is_converged_col=final.is_converged_col,
             data=combined_data,
             diagnostics={
                 **final.diagnostics,
@@ -704,9 +865,13 @@ class CLTAbsoluteCriterion:
         return ConvergenceResult(
             method=self.name,
             n=int(n),
+            n_col="n",
             estimate=float(mean) if mean is not None else None,
+            estimate_col="mean",
             error=float(abs_error),
+            error_col="abs_error",
             is_converged=is_converged,
+            is_converged_col="is_converged",
             data=final_df,
             diagnostics={
                 "threshold": params.threshold,
