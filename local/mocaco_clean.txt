@@ -10,22 +10,6 @@ Convergence analysis for Monte Carlo series using Polars DataFrames.
 The library provides a simple API for applying different convergence and
 stopping criteria to Monte Carlo simulation results.
 
-## Installation
-
-Create the virtual environment and install the project in editable mode with `uv`:
-
-```bash
-uv venv
-uv sync
-uv pip install -e .
-```
-
-If it is needed to remove an old environment:
-
-```bash
-Remove-Item -Recurse -Force .venv
-```
-
 ## Quickstart
 
 ```python
@@ -42,10 +26,11 @@ samples = mcc.samples(df, it_col="it", target_col="value")
 result = mcc.convergence.clt_absolute(samples, threshold=0.01)
 
 # Inspect results
-print(result.is_converged)   # True/False
-print(result.estimate)       # Final cumulative mean
-print(result.error)          # Final CLT-based absolute error
-print(result.n)              # Number of samples
+print(result.is_converged)  # True/False
+print(result.estimate)  # Final cumulative mean
+print(result.error)  # Final CLT-based absolute error
+print(result.n)  # Number of samples
+# and more...
 ```
 
 ## API Overview
@@ -70,20 +55,53 @@ Full documentation is available in the `docs/` directory or can be built with:
 mkdocs serve
 ```
 
+## Installation (Developers)
+
+### Environment
+
+Create the virtual environment and install the project in editable mode with `uv`:
+
+```bash
+uv venv
+uv sync
+uv pip install -e .
+```
+
+If it is needed to remove an old environment:
+
+```bash
+Remove-Item -Recurse -Force .venv
+```
+
+### ruff
+```bash
+uv run ruff check --fix . && uv run ruff format .
+```
+
+### mypy
+```bash
+uv run mypy src/
+```
+
 
 ========================================
 File: src/mocaco/api.py
 ========================================
 
+
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any
 
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
+from .wrappers import EvalFrequencyWrapper
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import polars as pl
 
     from .result import ConvergenceResult
@@ -93,7 +111,7 @@ def samples(
     df: pl.DataFrame,
     *,
     target_col: str,
-    it_col: Optional[str] = None,
+    it_col: str | None = None,
 ) -> SampleFrame:
     
     return SampleFrame(
@@ -105,28 +123,44 @@ def samples(
 
 class Convergence:
     
-    
+
     def __call__(
         self,
         samples: SampleFrame,
         *,
         method: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> ConvergenceResult:
         
         criterion = registry.get(method)
+        eval_frequency = kwargs.pop("eval_frequency", None)
         params = criterion.params_type(**kwargs)
+
+        if eval_frequency is not None:
+            if not getattr(criterion, "supports_eval_frequency", False):
+                raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
+            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+            return wrapper.run(samples=samples, params=params)
+
         return criterion.run(
             samples=samples,
             params=params,
         )
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         
         criterion = registry.get(name)
 
-        def _method(samples: SampleFrame, **kwargs):
+        def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
+            eval_frequency = kwargs.pop("eval_frequency", None)
             params = criterion.params_type(**kwargs)
+
+            if eval_frequency is not None:
+                if not getattr(criterion, "supports_eval_frequency", False):
+                    raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
+                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+                return wrapper.run(samples=samples, params=params)
+
             return criterion.run(samples=samples, params=params)
 
         return _method
@@ -140,7 +174,7 @@ def methods() -> tuple[str, ...]:
     return registry.names()
 
 
-def describe(name: str) -> dict | None:
+def describe(name: str) -> None:
     
     return registry.describe(name)
 
@@ -149,18 +183,23 @@ def describe(name: str) -> dict | None:
 File: src/mocaco/protocols.py
 ========================================
 
+
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import polars as pl
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from .result import ConvergenceResult
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class SampleFrame:
@@ -171,25 +210,19 @@ class SampleFrame:
     it_col: str | None = None
 
     def __post_init__(self) -> None:
+        
         if self.it_col is None:
-            new_df = self.df.with_columns(
-                pl.arange(1, len(self.df) + 1).alias("it")
-            )
+            new_df = self.df.with_columns(pl.arange(1, len(self.df) + 1).alias("it"))
             object.__setattr__(self, "df", new_df)
             object.__setattr__(self, "it_col", "it")
             logger.info("it_col was None — auto-created column 'it' with sequential indices.")
             return
 
-        missing = [
-            col
-            for col in (self.it_col, self.target_col)
-            if col not in self.df.columns
-        ]
+        missing = [col for col in (self.it_col, self.target_col) if col not in self.df.columns]
 
         if missing:
             raise ValueError(
-                f"Columns not found in DataFrame: {missing}. "
-                f"Available columns: {self.df.columns}"
+                f"Columns not found in DataFrame: {missing}. Available columns: {self.df.columns}"
             )
 
         if self.df.is_empty():
@@ -200,39 +233,46 @@ class Criterion(Protocol):
     
 
     name: str
+    supports_eval_frequency: bool
     description: str
     params_type: type[Any]
-    assumptions: list[str]
-    limitations: list[str]
+
+    assumptions: ClassVar[Sequence[str]]
+    limitations: ClassVar[Sequence[str]]
     result_interpretation: str
     example_usage: str
-    references: list[str]
+    references: ClassVar[Sequence[str]]
 
     def run(
         self,
         samples: SampleFrame,
         params: Any,
-    ) -> ConvergenceResult:
-        ...
+    ) -> ConvergenceResult: ...
 
 
 ========================================
 File: src/mocaco/registry.py
 ========================================
 
+
+
 from __future__ import annotations
 
-from dataclasses import MISSING, fields, is_dataclass
-from typing import Any, Callable, TypeVar, overload
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from .protocols import Criterion
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .protocols import Criterion
 
 C = TypeVar("C", bound=type)
 
 console = Console()
+
 
 class CriterionRegistry:
     def __init__(self) -> None:
@@ -245,7 +285,7 @@ class CriterionRegistry:
     # Overload 2: Programmatic usage (criterion instance provided)
     @overload
     def register(self, criterion: Criterion, *, overwrite: bool = False) -> Criterion: ...
-    
+
     def register(
         self,
         criterion: Criterion | None = None,
@@ -260,9 +300,7 @@ class CriterionRegistry:
                 raise ValueError("A criterion must define a non-empty name.")
 
             if name in self._criteria and not overwrite:
-                raise ValueError(
-                    f"Criterion {name!r} is already registered."
-                )
+                raise ValueError(f"Criterion {name!r} is already registered.")
 
             self._criteria[name] = criterion
             return criterion
@@ -281,42 +319,41 @@ class CriterionRegistry:
         except KeyError as exc:
             available = ", ".join(self.names())
             raise ValueError(
-                f"Unknown convergence criterion: {name!r}. "
-                f"Available criteria: {available}"
+                f"Unknown convergence criterion: {name!r}. Available criteria: {available}"
             ) from exc
 
     def names(self) -> tuple[str, ...]:
         return tuple(self._criteria.keys())
 
-    def describe(self, name: str) -> dict[str, Any] | None:
+    def describe(self, name: str) -> None:
         # 1. Fetch the criterion from the registry
         try:
             criterion = registry.get(name)
         except KeyError:
             console.print(f"[bold red]Error:[/bold red] Method '{name}' not found in registry.")
-            return None
-    
+            return
+
         # 2. Print the Method Name and Main Description in a Panel
         console.print()
         console.print(
             Panel(
-                f"{criterion.description}", 
+                f"{criterion.description}",
                 title=f"Method: [bold cyan]{name}[/bold cyan]",
                 title_align="left",
                 border_style="cyan",
-                expand=False
+                expand=False,
             )
         )
 
         # 3. Create a Table for the Parameters
         table = Table(
-            title="Parameters", 
-            title_style="bold magenta", 
-            title_justify="left", 
-            show_header=True, 
-            header_style="bold black on white"
+            title="Parameters",
+            title_style="bold magenta",
+            title_justify="left",
+            show_header=True,
+            header_style="bold black on white",
         )
-        
+
         table.add_column("Name", style="bold cyan", no_wrap=True)
         table.add_column("Type", style="green")
         table.add_column("Required", justify="center")
@@ -325,23 +362,17 @@ class CriterionRegistry:
 
         # 4. Introspect the Pydantic V2 model fields
         params_type = criterion.params_type
-        
+
         for field_name, field_info in params_type.model_fields.items():
             # Get type name cleanly
-            field_type = getattr(field_info.annotation, '__name__', str(field_info.annotation))
-            
+            field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
+
             is_required = field_info.is_required()
             req_icon = "[green]✔[/green]" if is_required else "[red]✘[/red]"
             default_val = "-" if is_required else repr(field_info.default)
             desc = field_info.description or "No description provided."
 
-            table.add_row(
-                field_name,
-                field_type,
-                req_icon,
-                default_val,
-                desc
-            )
+            table.add_row(field_name, field_type, req_icon, default_val, desc)
 
         # 5. Render the table
         console.print(table)
@@ -355,26 +386,32 @@ registry = CriterionRegistry()
 File: src/mocaco/result.py
 ========================================
 
+
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import polars as pl
+if TYPE_CHECKING:
+    import polars as pl
 
 
 @dataclass(frozen=True)
 class ConvergenceResult:
     
 
-    # Common outputs
+    # Common outputs to all criterions
     method: str
-    is_converged: bool
+    n: int
     estimate: float | None
     error: float | None
-    n: int
-    # Method-specific outputs
+    is_converged: bool
+
+    # Build by Wrapper or by the criterion default
     data: pl.DataFrame
+
+    # Method-specific outputs
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def to_polars(self) -> pl.DataFrame:
@@ -382,23 +419,164 @@ class ConvergenceResult:
         return self.data
 
     def __str__(self) -> str:
+        
         return str(self.data)
 
     def __repr__(self) -> str:
+        
         return (
             f"ConvergenceResult("
             f"method={self.method!r}, "
-            f"is_converged={self.is_converged!r}, "
+            f"n={self.n!r}"
             f"estimate={self.estimate!r}, "
             f"error={self.error!r}, "
-            f"n={self.n!r}"
+            f"is_converged={self.is_converged!r}, "
             f")"
+        )
+
+
+========================================
+File: src/mocaco/wrappers.py
+========================================
+
+
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+import polars as pl
+
+from .protocols import SampleFrame
+from .result import ConvergenceResult
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .protocols import Criterion
+
+
+class CriterionWrapper:
+    
+
+    def __init__(self, criterion: Criterion) -> None:
+        self._criterion = criterion
+
+    @property
+    def name(self) -> str:
+        return self._criterion.name
+
+    @property
+    def description(self) -> str:
+        return self._criterion.description
+
+    @property
+    def params_type(self) -> type[Any]:
+        return self._criterion.params_type
+
+    @property
+    def assumptions(self) -> Sequence[str]:
+        return self._criterion.assumptions
+
+    @property
+    def limitations(self) -> Sequence[str]:
+        return self._criterion.limitations
+
+    @property
+    def result_interpretation(self) -> str:
+        return self._criterion.result_interpretation
+
+    @property
+    def example_usage(self) -> str:
+        return self._criterion.example_usage
+
+    @property
+    def references(self) -> Sequence[str]:
+        return self._criterion.references
+
+    def run(
+        self,
+        samples: SampleFrame,
+        params: Any,
+    ) -> ConvergenceResult:
+        return self._criterion.run(samples, params)
+
+
+class EvalFrequencyWrapper(CriterionWrapper):
+    
+
+    def __init__(self, criterion: Criterion, eval_frequency: int) -> None:
+        super().__init__(criterion)
+        if eval_frequency <= 0:
+            raise ValueError(f"eval_frequency must be a positive integer, got {eval_frequency}")
+        self._eval_frequency = eval_frequency
+
+    @property
+    def eval_frequency(self) -> int:
+        return self._eval_frequency
+
+    def run(
+        self,
+        samples: SampleFrame,
+        params: Any,
+    ) -> ConvergenceResult:
+        total_rows = len(samples.df)
+
+        if self._eval_frequency >= total_rows:
+            result = self._criterion.run(samples, params)
+            return ConvergenceResult(
+                method=result.method,
+                n=result.n,
+                estimate=result.estimate,
+                error=result.error,
+                is_converged=result.is_converged,
+                data=result.data,
+                diagnostics={
+                    **result.diagnostics,
+                    "eval_frequency": self._eval_frequency,
+                    "n_evaluations": 1,
+                },
+            )
+
+        eval_points = list(range(self._eval_frequency, total_rows + 1, self._eval_frequency))
+        if eval_points[-1] != total_rows:
+            eval_points.append(total_rows)
+
+        results: list[ConvergenceResult] = []
+        for point in eval_points:
+            sliced_df = samples.df.head(point)
+            sliced_samples = SampleFrame(
+                df=sliced_df,
+                target_col=samples.target_col,
+                it_col=samples.it_col,
+            )
+            result = self._criterion.run(sliced_samples, params)
+            results.append(result)
+
+        data_frames = [r.data for r in results]
+        combined_data = pl.concat(data_frames, how="align")
+
+        final = results[-1]
+        return ConvergenceResult(
+            method=final.method,
+            n=final.n,
+            estimate=final.estimate,
+            error=final.error,
+            is_converged=final.is_converged,
+            data=combined_data,
+            diagnostics={
+                **final.diagnostics,
+                "eval_frequency": self._eval_frequency,
+                "n_evaluations": len(results),
+            },
         )
 
 
 ========================================
 File: src/mocaco/__init__.py
 ========================================
+
+
 
 from .api import convergence, describe, methods, samples
 
@@ -413,6 +591,8 @@ __all__ = [
 ========================================
 File: src/mocaco/methods/clt_absolute.py
 ========================================
+
+
 
 # Mandatory basic modules
 from __future__ import annotations
@@ -447,17 +627,13 @@ class CLTAbsoluteParams(BaseModel):
         description="Confidence level used for the CLT margin of error.",
     )
 
-    stb_window: int = Field(
-        30,
-        ge=1,
-        description="Minimum number of consecutive iterations meeting the threshold.",
-    )
-
 
 # 2. Criterion logic (calculous)
 @registry.register()
 class CLTAbsoluteCriterion:
     name = "clt_absolute"
+
+    supports_eval_frequency = True
 
     description = (
         "Central Limit Theorem based convergence criterion "
@@ -466,18 +642,18 @@ class CLTAbsoluteCriterion:
 
     params_type = CLTAbsoluteParams
 
-    assumptions = [
+    assumptions = (
         "Samples are independent and identically distributed (i.i.d.).",
         "The target quantity has finite variance.",
         "The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.",
-    ]
+    )
 
-    limitations = [
+    limitations = (
         "This is a probabilistic stopping criterion, not a proof of convergence.",
         "For small sample sizes, the normal approximation may be inaccurate.",
         "Does not detect systematic bias or non-stationarity in the sampling process.",
         "The stability window introduces a lag in detecting convergence.",
-    ]
+    )
 
     result_interpretation = (
         "is_converged is True when the CLT-based absolute error has stayed below "
@@ -489,9 +665,7 @@ class CLTAbsoluteCriterion:
 
     example_usage = 
 
-    references = [
-        "https://en.wikipedia.org/wiki/Central_limit_theorem",
-    ]
+    references = ("https://en.wikipedia.org/wiki/Central_limit_theorem",)
 
     def run(
         self,
@@ -499,65 +673,45 @@ class CLTAbsoluteCriterion:
         params: CLTAbsoluteParams,
     ) -> ConvergenceResult:
 
-        df = samples.df.sort(samples.it_col)
-
         target = pl.col(samples.target_col).cast(pl.Float64)
 
-        n = target.cum_count()
+        agg_df = samples.df.select(
+            [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+        )
 
-        cum_sum = target.cum_sum()
-        cum_sum_sq = (target**2).cum_sum()
+        final = agg_df.row(0, named=True)
+        n = final["n"]
+        mean = final["mean"]
+        std = final["std"] if final["std"] is not None else 0.0
 
-        # Sample variance:
-        #
-        # s²_n =
-        #     [sum(x²) - sum(x)² / n] / (n - 1)
-        #
-        cum_var = (cum_sum_sq - (cum_sum**2) / n) / (n - 1)
-
-        cum_std = pl.when(n > 1).then(cum_var.clip(lower_bound=0.0).sqrt()).otherwise(0.0)
-
-        sem = cum_std / n.sqrt()
-
+        sem = std / (n**0.5) if n > 0 else 0.0
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
-
         abs_error = sem * z_score
 
-        meets_threshold = abs_error <= params.threshold
+        is_converged = abs_error <= params.threshold
 
-        is_converged = (
-            meets_threshold.cast(pl.Int32).rolling_sum(window_size=params.stb_window).fill_null(0)
-            == params.stb_window
+        final_df = pl.DataFrame(
+            {
+                "n": [n],
+                "mean": [mean],
+                "std": [std],
+                "sem": [sem],
+                "abs_error": [abs_error],
+                "is_converged": [is_converged],
+            }
         )
-
-        result_df = df.with_columns(
-            [
-                n.alias("cum_n"),
-                (cum_sum / n).alias("cum_mean"),
-                cum_std.alias("cum_std"),
-                sem.alias("sem"),
-                abs_error.alias("abs_error"),
-                meets_threshold.alias("meets_threshold"),
-                is_converged.alias("is_converged"),
-            ]
-        )
-
-        final = result_df.tail(1).to_dicts()[0]
 
         return ConvergenceResult(
             method=self.name,
-            data=result_df,
-            is_converged=bool(final["is_converged"]),
-            estimate=(float(final["cum_mean"]) if final["cum_mean"] is not None else None),
-            error=(float(final["abs_error"]) if final["abs_error"] is not None else None),
-            n=int(final["cum_n"]),
+            n=int(n),
+            estimate=float(mean) if mean is not None else None,
+            error=float(abs_error),
+            is_converged=is_converged,
+            data=final_df,
             diagnostics={
                 "threshold": params.threshold,
                 "confidence_level": params.confidence_level,
-                "stb_window": params.stb_window,
                 "z_score": z_score,
-                "it_col": samples.it_col,
-                "target_col": samples.target_col,
             },
         )
 
@@ -566,9 +720,11 @@ class CLTAbsoluteCriterion:
 File: src/mocaco/methods/__init__.py
 ========================================
 
+
+
 import importlib
 import pkgutil
 
-for _, module_name, _ in pkgutil.iter_modules(__path__):
+for _finder, module_name, _ispkg in pkgutil.iter_modules(__path__):
     importlib.import_module(f"{__name__}.{module_name}")
 
