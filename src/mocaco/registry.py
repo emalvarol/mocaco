@@ -1,4 +1,4 @@
-"""Registry of mocaco convergence methods."""
+"""Registry singleton of mocaco convergence methods."""
 
 from __future__ import annotations
 
