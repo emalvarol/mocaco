@@ -14,21 +14,27 @@ from mocaco.protocols import SampleFrame
 def test_convergence_eval_frequency_in_diagnostics() -> None:
     """Eval frequency wrapper injects the frequency value into diagnostics."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5)
+    result = convergence(
+        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+    )
     assert result.diagnostics.get("eval_frequency") == 5
 
 
 def test_convergence_eval_frequency_count() -> None:
     """Eval frequency wrapper tracks the correct total number of evaluations."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5)
+    result = convergence(
+        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+    )
     assert result.diagnostics.get("n_evaluations") == 4
 
 
 def test_convergence_eval_frequency_data_length() -> None:
     """Eval frequency wrapper concatenates data matching the evaluation count."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5)
+    result = convergence(
+        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+    )
     assert len(result.data) == 4
 
 
@@ -103,6 +109,7 @@ def test_describe_existing_method() -> None:
 def test_describe_unknown_method(capsys: pytest.CaptureFixture[str]) -> None:
     """describe() prints an error message for unknown method."""
     from mocaco import describe
+
     describe("nonexistent_method")
     captured = capsys.readouterr()
     assert "Error:" in captured.out

@@ -61,7 +61,9 @@ def test_clt_run_estimate_correct() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [2.5] * 100})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result.estimate == 2.5
 
 
@@ -70,7 +72,9 @@ def test_clt_run_n_correct() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 51), "value": [1.0] * 50})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result.n == 50
 
 
@@ -79,7 +83,9 @@ def test_clt_run_error_correct() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result.error is not None
 
 
@@ -88,14 +94,18 @@ def test_clt_run_converged_true() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=1.0, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=1.0, confidence_level=0.95)
+    )
     assert result.is_converged is True
 
 
 def test_clt_run_converged_false(sample_frame: SampleFrame) -> None:
     """Does not converge with strict threshold on high-variance data."""
     criterion = CLTAbsoluteCriterion()
-    result = criterion.run(samples=sample_frame, params=CLTAbsoluteParams(threshold=0.01, confidence_level=0.95))
+    result = criterion.run(
+        samples=sample_frame, params=CLTAbsoluteParams(threshold=0.01, confidence_level=0.95)
+    )
     assert result.is_converged is False
 
 
@@ -104,7 +114,9 @@ def test_clt_run_diagnostics() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.99))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.99)
+    )
     assert "threshold" in result.diagnostics
     assert "confidence_level" in result.diagnostics
     assert "z_score" in result.diagnostics
@@ -115,7 +127,9 @@ def test_clt_run_data_columns() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     expected_cols = {"n", "mean", "std", "sem", "abs_error", "is_converged"}
     assert set(result.data.columns) == expected_cols
 
@@ -125,7 +139,9 @@ def test_clt_run_zero_variance() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 11), "value": [5.0] * 10})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result is not None
 
 
@@ -134,7 +150,9 @@ def test_clt_run_single_sample() -> None:
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": [1], "value": [3.14]})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result is not None
 
 
@@ -145,7 +163,9 @@ def test_clt_run_large_sample() -> None:
     values = rng.standard_normal(1000) * 0.01  # very low variance
     df = pl.DataFrame({"it": range(1, 1001), "value": values})
     sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95))
+    result = criterion.run(
+        samples=sf, params=CLTAbsoluteParams(threshold=0.5, confidence_level=0.95)
+    )
     assert result.is_converged is True
 
 

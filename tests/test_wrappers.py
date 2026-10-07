@@ -43,6 +43,7 @@ class MockCriterion:
             diagnostics={},
         )
 
+
 def test_eval_frequency_property() -> None:
     """Property eval_frequency returns the initialized value."""
     inner = MockCriterion()

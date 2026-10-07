@@ -94,7 +94,9 @@ def test_sample_frame_int_target_accepted(sample_df_with_it: pl.DataFrame) -> No
 
 def test_sample_frame_filter_cols(sample_df_with_it: pl.DataFrame) -> None:
     """SampleFrame validates columns are present."""
-    df = pl.DataFrame({"it": range(1, 11), "value": [1.0] * 10, "extra": [9.0] * 10, "another": [1.0] * 10})
+    df = pl.DataFrame(
+        {"it": range(1, 11), "value": [1.0] * 10, "extra": [9.0] * 10, "another": [1.0] * 10}
+    )
     sf = SampleFrame(df=df, target_col="value", it_col="it")
     assert sf.it_col == "it"
     assert sf.target_col == "value"

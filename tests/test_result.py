@@ -79,6 +79,7 @@ def test_result_to_polars() -> None:
 def test_result_to_pandas() -> None:
     """Returns pandas DataFrame."""
     import pandas as pd
+
     result = ConvergenceResult(
         method="test",
         n=100,
@@ -162,7 +163,9 @@ def test_result_summary_not_converged(capsys) -> None:
         error_col="abs_error",
         is_converged=False,
         is_converged_col="is_converged",
-        data=pl.DataFrame({"n": [100], "mean": [3.14], "abs_error": [0.1], "is_converged": [False]}),
+        data=pl.DataFrame(
+            {"n": [100], "mean": [3.14], "abs_error": [0.1], "is_converged": [False]}
+        ),
     )
     result.summary()
     captured = capsys.readouterr()
@@ -201,7 +204,9 @@ def test_result_summary_none_estimate() -> None:
         error_col="abs_error",
         is_converged=None,
         is_converged_col="is_converged",
-        data=pl.DataFrame({"n": [100], "mean": [None], "abs_error": [None], "is_converged": [None]}),
+        data=pl.DataFrame(
+            {"n": [100], "mean": [None], "abs_error": [None], "is_converged": [None]}
+        ),
     )
     s = str(result)
     assert "None" in s or "null" in s
@@ -281,6 +286,7 @@ def test_plotter_evolution_missing_cols_raises() -> None:
 def test_plotter_evolution_no_convergence() -> None:
     """Plot works when is_converged all False."""
     import matplotlib.pyplot as plt
+
     result = ConvergenceResult(
         method="test",
         n=100,
@@ -302,6 +308,7 @@ def test_plotter_evolution_no_convergence() -> None:
     )
     ax = result.plot.evolution()
     import matplotlib.axes
+
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()
 
@@ -309,6 +316,7 @@ def test_plotter_evolution_no_convergence() -> None:
 def test_plotter_evolution_with_show_false() -> None:
     """Does not call plt.show() when show=False."""
     import matplotlib.pyplot as plt
+
     result = ConvergenceResult(
         method="test",
         n=100,
@@ -331,5 +339,6 @@ def test_plotter_evolution_with_show_false() -> None:
     # This should not show the plot, just return axes
     ax = result.plot.evolution(show=False)
     import matplotlib.axes
+
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()

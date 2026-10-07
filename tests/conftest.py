@@ -13,7 +13,9 @@ from mocaco.protocols import SampleFrame
 @pytest.fixture
 def sample_df_small() -> pl.DataFrame:
     """10-row Polars DataFrame with known values."""
-    return pl.DataFrame({"it": range(1, 11), "value": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]})
+    return pl.DataFrame(
+        {"it": range(1, 11), "value": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]}
+    )
 
 
 @pytest.fixture

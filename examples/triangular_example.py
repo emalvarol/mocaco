@@ -38,10 +38,8 @@ ax = result.plot.evolution(show=True)
 # One-shot design
 result = mcc.convergence.clt_absolute(
     mcc.samples(
-        pl.DataFrame({
-            "value": triang.rvs(c=0.5, loc=0, scale=10, size=200_000)
-        }),
-        target_col="value"
+        pl.DataFrame({"value": triang.rvs(c=0.5, loc=0, scale=10, size=200_000)}),
+        target_col="value",
     ),
     threshold=0.01,
     eval_frequency=500,

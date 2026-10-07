@@ -44,12 +44,16 @@ class ResultPlotter:
         df = self.result.data
 
         # Ensure required columns exist
-        missing = [col for col in (
-            self.result.estimate_col,
-            self.result.error_col,
-            self.result.n_col,
-            self.result.is_converged_col
-        ) if col not in self.result.data.columns]
+        missing = [
+            col
+            for col in (
+                self.result.estimate_col,
+                self.result.error_col,
+                self.result.n_col,
+                self.result.is_converged_col,
+            )
+            if col not in self.result.data.columns
+        ]
         if missing:
             raise ValueError(f"Columns not found in diagnostic data for plotting: {missing}")
 
@@ -170,7 +174,9 @@ class ConvergenceResult:
         # Create the inner layout table
         table = Table(show_header=False, box=None, padding=(0, 2))
         table.add_row("[bold]Method:[/bold]", f"[cyan]{self.method}[/cyan]")
-        table.add_row("[bold]Status:[/bold]", f"[{status_color}]{status_icon} {status_text}[/{status_color}]")
+        table.add_row(
+            "[bold]Status:[/bold]", f"[{status_color}]{status_icon} {status_text}[/{status_color}]"
+        )
         table.add_row("[bold]Samples (n):[/bold]", str(self.n))
         est_str = f"{self.estimate:.6g}" if self.estimate is not None else "-"
         table.add_row("[bold]Estimate:[/bold]", est_str)

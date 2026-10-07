@@ -73,6 +73,7 @@ def test_register_duplicate_raises() -> None:
             pass
 
     with pytest.raises(ValueError, match=r"already registered"):
+
         @registry.register()
         class SecondCriterion:
             name = "dup_test"
@@ -88,8 +89,10 @@ def test_register_duplicate_raises() -> None:
             def run(self, samples: Any, params: Any) -> Any:
                 pass
 
+
 class DummyParams(BaseModel):
     threshold: float = 0.5
+
 
 def test_register_overwrite_allows_duplicate() -> None:
     """overwrite=True replaces existing."""
@@ -119,6 +122,7 @@ def test_register_empty_name_raises() -> None:
     reg = CriterionRegistry()
 
     with pytest.raises(ValueError, match=r"A criterion must define a non-empty name."):
+
         @reg.register()
         class EmptyNameCriterion:
             name = ""
@@ -177,4 +181,5 @@ def test_describe_unknown_prints_error(capsys: pytest.CaptureFixture[str]) -> No
 def test_registry_is_singleton() -> None:
     """Module-level registry is shared."""
     from mocaco.registry import registry as reg2
+
     assert registry is reg2

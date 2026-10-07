@@ -78,7 +78,10 @@ class SampleFrame:
             if target.is_nan().any():
                 raise ValueError(f"Target column '{self.target_col}' contains NaN values.")
             if target.is_infinite().any():
-                raise ValueError(f"Target column '{self.target_col}' contains Infinite (Inf) values.")
+                raise ValueError(
+                    f"Target column '{self.target_col}' contains Infinite (Inf) values."
+                )
+
 
 class Criterion(Protocol):
     """Structural contract implemented by every convergence criterion."""
