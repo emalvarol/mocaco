@@ -6,7 +6,7 @@ from scipy.stats import triang
 import mocaco as mcc
 
 # 50 samples from triangular(0, 10) with mode 5 (c=0.5)
-vals = triang.rvs(c=0.5, loc=0, scale=10, size=50)
+vals = triang.rvs(c=0.5, loc=0, scale=10, size=5000)
 df = pl.DataFrame({"value": vals})
 
 # API
@@ -16,7 +16,7 @@ mcc.describe("clt_absolute")
 samples = mcc.samples(df, target_col="value")
 result = mcc.convergence.clt_absolute(
     samples,
-    threshold=0.7,
+    threshold=0.1,
     eval_frequency=5,
 )
 with pl.Config(tbl_rows=-1):
@@ -33,3 +33,16 @@ df_pandas = result.to_pandas()
 
 # Plots
 ax = result.plot.evolution(show=True)
+
+
+# One-shot design
+result = mcc.convergence.clt_absolute(
+    mcc.samples(
+        pl.DataFrame({
+            "value": triang.rvs(c=0.5, loc=0, scale=10, size=200_000)
+        }),
+        target_col="value"
+    ),
+    threshold=0.01,
+    eval_frequency=500,
+).plot.evolution(show=True)

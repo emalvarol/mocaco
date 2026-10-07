@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Convergence analysis for Monte Carlo series — works with Polars DataFrames"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "GPL-3.0-only"}
+license = {text = "LGPL-3.0-or-later"}
 authors = [
   {name = "Álvaro Esteban Muñoz", email = "em.alvaro.l@gmail.com"},
 ]

@@ -10,15 +10,17 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 - [x] 4. Add a rich summary for results. Update ConvergenceResults
 - [x] 5. Basic plotting capabilities and export hooks (to_pandas, to_polars)
 - [x] 6. Comprehensive test coverage
-- [ ] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.9, 3.10, 3.11 y 3.12) and every pull request and push to main
-- [ ] 8. Add basic criterions:
-    - clt_relative, std_error, relative_change
-- [ ] 9. User Guide & Tutorials providing worked examples covering noise vs smooth convergence custom criterion registration via wrapper and Polars integration patters
-- [ ] 10. CONTRIBUTING.md Guidelines for external developers registering new convergence criteria.
-- [ ] 11. Project Files CHANGELOG.md Document release notes for 1.0.0
-- [ ] 12. PyPI Publish workflow (publish.yml) (uv build / build)
+- [ ] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.12, 3.13, 3.14) and every pull request and push to main
+- [ ] 8. CONTRIBUTING.md Guidelines for external developers registering new convergence criteria.
+- [ ] 9. Project Files CHANGELOG.md Document release notes for 1.0.0
+- [ ] 10. PyPI Publish workflow (publish.yml) (uv build / build)
+- [ ] 11. User Guide & Tutorials providing worked examples covering noise vs smooth convergence custom criterion registration via wrapper and Polars integration patters
+- [ ] 12. Add basic criterions:
+    - clt_uni_rlt, clt_multi_rlt (vats_2019)
+
 
 ## Minor improvements
 - [ ] Make pandas, matplotlib optionals dependencies
 - [ ] standarize n using it instead
 - [ ] standarize stimate using metric instead
+- [ ] change clt_absolute to clt_uni_abs
