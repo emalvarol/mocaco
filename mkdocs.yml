@@ -1,6 +1,6 @@
 site_name: mocaco
 site_description: Convergence analysis for Monte Carlo series
-repo_url: https://github.com/yourusername/mocaco
+repo_url: https://github.com/emalvarol/mocaco
 
 theme:
   name: material

@@ -7,6 +7,10 @@
 
 Convergence analysis for Monte Carlo series using Polars DataFrames.
 
+<p align="center">
+  <img src="assets/Logo_v1.png" alt="mocaco logo" width="400"/>
+</p>
+
 The library provides a simple API for applying different convergence and
 stopping criteria to Monte Carlo simulation results.
 

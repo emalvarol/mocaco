@@ -11,7 +11,7 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 - [x] 5. Basic plotting capabilities and export hooks (to_pandas, to_polars)
 - [x] 6. Comprehensive test coverage
 - [x] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.12, 3.13, 3.14) and every pull request and push to main
-- [ ] 8. CONTRIBUTING.md Guidelines for external developers registering new convergence criteria.
+- [x] 8. CONTRIBUTING.md Guidelines for external developers registering new convergence criteria.
 - [ ] 9. Project Files CHANGELOG.md Document release notes for 1.0.0
 - [ ] 10. PyPI Publish workflow (publish.yml) (uv build / build)
 - [ ] 11. User Guide & Tutorials providing worked examples covering noise vs smooth convergence custom criterion registration via wrapper and Polars integration patters
@@ -24,3 +24,5 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 - [ ] standarize n using it instead
 - [ ] standarize stimate using metric instead
 - [ ] change clt_absolute to clt_uni_abs
+- [ ] update test_spec with the implemented test
+- [ ] update github actions to run stub and docs script with every pull (is that possible?)
