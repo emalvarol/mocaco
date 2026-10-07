@@ -10,7 +10,7 @@ Sometimes with a note, for instance: #! a1. Include None to allow...
 - [x] 4. Add a rich summary for results. Update ConvergenceResults
 - [x] 5. Basic plotting capabilities and export hooks (to_pandas, to_polars)
 - [x] 6. Comprehensive test coverage
-- [ ] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.12, 3.13, 3.14) and every pull request and push to main
+- [x] 7. Automate test workflow in GitHub Actions (ci.yml) across python versions (3.12, 3.13, 3.14) and every pull request and push to main
 - [ ] 8. CONTRIBUTING.md Guidelines for external developers registering new convergence criteria.
 - [ ] 9. Project Files CHANGELOG.md Document release notes for 1.0.0
 - [ ] 10. PyPI Publish workflow (publish.yml) (uv build / build)

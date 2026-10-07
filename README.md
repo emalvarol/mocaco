@@ -1,4 +1,9 @@
 # mocaco
+# mocaco
+
+[![CI](https://github.com/emalvarol/mocaco/actions/workflows/ci.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci.yml)
+![Python Versions](https://img.shields.io/badge/python-3.12%20|%203.13%20|%203.14-blue)
+![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
 Convergence analysis for Monte Carlo series using Polars DataFrames.
 
