@@ -28,6 +28,7 @@ dev = [
     "ty>=0.0.84",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.7.7",
+    "pandas-stubs>=3.0.5.260914",
 ]
 
 [build-system]
