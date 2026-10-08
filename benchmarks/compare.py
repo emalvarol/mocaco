@@ -10,6 +10,7 @@ from rich.table import Table
 
 
 def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
+    """Analyze benchmark result."""
     path = Path(json_path)
     if not path.exists():
         print(f"Error: No se encontró {json_path}. Ejecuta pytest con --benchmark-json primero.")
@@ -34,7 +35,7 @@ def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
     pivot_df = df.pivot(
         values="mean_time_sec",
         index=["n_samples", "eval_freq"],
-        columns="implementation",
+        on="implementation",
     )
 
     # 3. Calcular métricas de mejora
