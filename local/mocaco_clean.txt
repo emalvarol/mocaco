@@ -100,6 +100,8 @@ File: src/mocaco/api.py
 
 from __future__ import annotations
 
+import time
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from . import methods as _methods  # noqa: F401
@@ -144,16 +146,19 @@ class Convergence:
         eval_frequency = kwargs.pop("eval_frequency", None)
         params = criterion.params_type(**kwargs)
 
+        start_time = time.perf_counter()
+
         if eval_frequency is not None:
             if not getattr(criterion, "supports_eval_frequency", False):
                 raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
             wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-            return wrapper.run(samples=samples, params=params)
+            result = wrapper.run(samples=samples, params=params)
+        else:
+            result = criterion.run(samples=samples, params=params)
 
-        return criterion.run(
-            samples=samples,
-            params=params,
-        )
+        elapsed = time.perf_counter() - start_time
+        print(elapsed)
+        return replace(result, execution_time_sec=elapsed)
 
     def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         
@@ -529,6 +534,9 @@ class ConvergenceResult:
     # Build by Wrapper or by the criterion default
     data: pl.DataFrame
 
+    # Performance
+    execution_time_sec: float | None = None
+
     # Method-specific outputs
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
@@ -565,6 +573,8 @@ class ConvergenceResult:
         table.add_row("[bold]Estimate:[/bold]", est_str)
         err_str = f"{self.error:.6g}" if self.error is not None else "-"
         table.add_row("[bold]Error:[/bold]", err_str)
+        if self.execution_time_sec is not None:
+            table.add_row("[bold]Execution Time:[/bold]", f"{self.execution_time_sec * 1000:.2f} ms")
 
         # Append diagnostics dynamically if they exist
         if self.diagnostics:

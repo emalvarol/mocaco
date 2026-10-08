@@ -6,41 +6,33 @@ from scipy.stats import triang
 import mocaco as mcc
 
 # 50 samples from triangular(0, 10) with mode 5 (c=0.5)
-vals = triang.rvs(c=0.5, loc=0, scale=10, size=5000)
+vals = triang.rvs(c=0.5, loc=0, scale=10, size=100000)
 df = pl.DataFrame({"value": vals})
+samples = mcc.samples(df, target_col="value")
 
 # API
 mcc.methods()
-mcc.describe("clt_absolute")
 
-samples = mcc.samples(df, target_col="value")
+# 1
+mcc.describe("clt_absolute")
 result = mcc.convergence.clt_absolute(
     samples,
     threshold=0.1,
     eval_frequency=5,
 )
 with pl.Config(tbl_rows=-1):
-    print(result.method)
-    print(result.n)
-    print(result.is_converged)
-    print(result)
-
+    print(result.execution_time_sec) # 0.32 (5000) # 7.9 (100000)
 result.summary()
-
-# Export hooks
-df_polars = result.to_polars()
-df_pandas = result.to_pandas()
-
-# Plots
 ax = result.plot.evolution(show=True)
 
-
-# One-shot design
-result = mcc.convergence.clt_absolute(
-    mcc.samples(
-        pl.DataFrame({"value": triang.rvs(c=0.5, loc=0, scale=10, size=200_000)}),
-        target_col="value",
-    ),
-    threshold=0.01,
-    eval_frequency=500,
-).plot.evolution(show=True)
+# 2
+mcc.describe("clt_uni_abs")
+result = mcc.convergence.clt_uni_abs(
+    samples,
+    threshold=0.1,
+    eval_frequency=5,
+)
+with pl.Config(tbl_rows=-1):
+    print(result.execution_time_sec) # 0.01 (5000) # 0.005 (100000)
+result.summary()
+ax = result.plot.evolution(show=True)

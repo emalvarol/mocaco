@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from . import methods as _methods  # noqa: F401
@@ -63,35 +65,45 @@ class Convergence:
     ) -> ConvergenceResult:
         """Invoke a registered convergence criterion generically by name."""
         criterion = registry.get(method)
-        eval_frequency = kwargs.pop("eval_frequency", None)
-        params = criterion.params_type(**kwargs)
 
-        if eval_frequency is not None:
-            if not getattr(criterion, "supports_eval_frequency", False):
-                raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
-            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-            return wrapper.run(samples=samples, params=params)
+        start_time = time.perf_counter()
 
-        return criterion.run(
-            samples=samples,
-            params=params,
-        )
+        if getattr(criterion, "supports_eval_frequency", False):
+            eval_frequency = kwargs.pop("eval_frequency", None)
+            params = criterion.params_type(**kwargs)
+            if eval_frequency is not None:
+                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+                result = wrapper.run(samples=samples, params=params)
+            else:
+                result = criterion.run(samples=samples, params=params)
+        else:
+            params = criterion.params_type(**kwargs)
+            result = criterion.run(samples=samples, params=params)
+
+        elapsed = time.perf_counter() - start_time
+        return replace(result, execution_time_sec=elapsed)
 
     def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         """Resolve registered criteria as callable attributes."""
         criterion = registry.get(name)
 
         def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
-            eval_frequency = kwargs.pop("eval_frequency", None)
-            params = criterion.params_type(**kwargs)
+            start_time = time.perf_counter()
 
-            if eval_frequency is not None:
-                if not getattr(criterion, "supports_eval_frequency", False):
-                    raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
-                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-                return wrapper.run(samples=samples, params=params)
+            if getattr(criterion, "supports_eval_frequency", False):
+                eval_frequency = kwargs.pop("eval_frequency", None)
+                params = criterion.params_type(**kwargs)
+                if eval_frequency is not None:
+                    wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+                    result = wrapper.run(samples=samples, params=params)
+                else:
+                    result = criterion.run(samples=samples, params=params)
+            else:
+                params = criterion.params_type(**kwargs)
+                result = criterion.run(samples=samples, params=params)
 
-            return criterion.run(samples=samples, params=params)
+            elapsed = time.perf_counter() - start_time
+            return replace(result, execution_time_sec=elapsed)
 
         return _method
 

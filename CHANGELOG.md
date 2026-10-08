@@ -5,22 +5,22 @@ All notable changes to the mocaco project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.2.0 — 2026-08-10
 
 ### Added
-- Version bump from `0.1.0` to `1.0.0` in `pyproject.toml`.
-- Updated `docs/index.md` with onboarding contribution section.
+- Updated documentation and contribution section.
+- 
 
 ### Changed
-- (none for 1.0.0 initial release)
+- 
 
 ### Deprecated
-- (none for 1.0.0 initial release)
+- 
 
 ### Fixed
-- (none for 1.0.0 initial release)
+- 
 
-## 0.1.0 — 2026-01-01
+## 0.1.0 — 2026-08-09
 
 ### Added
 - Initial library structure: `src/mocaco/`, `docs/`, `tests/`, `scripts/`
