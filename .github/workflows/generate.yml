@@ -31,6 +31,11 @@ jobs:
         run: |
           python scripts/generate_stubs.py
           python scripts/generate_docs.py
+      
+      - name: Format generated files with Ruff
+        run: |
+          ruff check --fix src/mocaco/api.pyi
+          ruff format src/mocaco/api.pyi
 
       - name: Auto-commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
