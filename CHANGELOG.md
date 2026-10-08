@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Updated documentation and contribution section.
-- 
+- Method execution time measurement and benchmark to compare better method implementation.
 
 ### Changed
-- 
+- clt_absolute method is now clt_uni_abs
 
 ### Deprecated
-- 
+- wrapper (low performance compared to support at method module level).
 
 ### Fixed
 - 
