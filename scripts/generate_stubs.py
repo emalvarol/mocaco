@@ -55,7 +55,7 @@ def generate_api_stub():
 
         # Introspect Pydantic V2 fields (use __fields__ for V1)
         for field_name, field_info in params_type.model_fields.items():
-            field_type = field_info.annotation.__name__
+            field_type = getattr(field_info.annotation, "__name__", str(field_info.annotation))
 
             if field_info.is_required():
                 args.append(f"{field_name}: {field_type}")
@@ -68,14 +68,6 @@ def generate_api_stub():
                 doc_params.append(
                     f"        {field_name} : {field_type}, default {default_val}\n            {field_info.description}"
                 )
-
-        supports_eval_frequency = getattr(criterion, "supports_eval_frequency", False)
-
-        if supports_eval_frequency:
-            args.append("eval_frequency: int = 1")
-            doc_params.append(
-                "        eval_frequency : int, default 1\n            Number of rows between successive evaluations."
-            )
 
         signature = ", ".join(args)
 

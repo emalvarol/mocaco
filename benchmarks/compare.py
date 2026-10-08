@@ -3,6 +3,7 @@
 
 import json
 from pathlib import Path
+
 import polars as pl
 from rich.console import Console
 from rich.table import Table
@@ -48,7 +49,7 @@ def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
     # 4. Imprimir tabla formateada con Rich
     console = Console()
     table = Table(title="Comparación de Rendimiento: native vs native2", header_style="bold cyan")
-    
+
     table.add_column("N Samples", justify="right")
     table.add_column("Eval Freq", justify="right")
     table.add_column("Tiempo Native", justify="right", style="green")

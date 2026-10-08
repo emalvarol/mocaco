@@ -14,35 +14,8 @@ samples = mcc.samples(df, target_col="value")
 mcc.methods()
 
 # 1
-mcc.describe("clt_absolute")
-result = mcc.convergence.clt_absolute(
-    samples,
-    threshold=0.1,
-    eval_frequency=5,
-)
-with pl.Config(tbl_rows=-1):
-    print(result.execution_time_sec) # 0.32 (5_000) # 0.6 (10_000) # 7.9 (100_000)
-    print(result.data)
-result.summary()
-ax = result.plot.evolution(show=True)
-
-# 2
 mcc.describe("clt_uni_abs")
 result = mcc.convergence.clt_uni_abs(
-    samples,
-    threshold=0.1,
-    eval_frequency=5,
-)
-with pl.Config(tbl_rows=-1):
-    print(result.execution_time_sec) # 0.001 (5_000) # 0.002 (10_000) # 0.005 (100_000)
-    print(result.data)
-result.summary()
-ax = result.plot.evolution(show=True)
-
-
-# 2
-mcc.describe("clt_uni_abs")
-result = mcc.convergence.clt_uni_abs2(
     samples,
     threshold=0.1,
     eval_frequency=5,

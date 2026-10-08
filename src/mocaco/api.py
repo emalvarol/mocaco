@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
-from .wrappers import EvalFrequencyWrapper
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -65,26 +64,8 @@ class Convergence:
     ) -> ConvergenceResult:
         start_time = time.perf_counter()
 
-        eval_freq_passed = "eval_frequency" in kwargs
-        # Introspección para verificar si eval_frequency es un parámetro nativo del criterio
-        is_native_param = "eval_frequency" in getattr(criterion.params_type, "model_fields", {})
-
-        if eval_freq_passed and not is_native_param:
-            # Fallback: El criterio no lo soporta nativamente, intenta usar EvalFrequencyWrapper
-            eval_frequency = kwargs.pop("eval_frequency")
-            if not getattr(criterion, "supports_eval_frequency", False):
-                raise TypeError(
-                    f"Criterion '{criterion.name}' does not support eval_frequency "
-                    "natively or via wrapper."
-                )
-
-            params = criterion.params_type(**kwargs)
-            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-            result = wrapper.run(samples=samples, params=params)
-        else:
-            # Ejecución directa (ya sea nativa con eval_frequency o estándar sin eval_frequency)
-            params = criterion.params_type(**kwargs)
-            result = criterion.run(samples=samples, params=params)
+        params = criterion.params_type(**kwargs)
+        result = criterion.run(samples=samples, params=params)
 
         elapsed = time.perf_counter() - start_time
         return replace(result, execution_time_sec=elapsed)
