@@ -11,24 +11,28 @@
       
       
       
+        <link rel="prev" href="../polars-integration/">
+      
+      
+        <link rel="next" href="../../tutorials/noise-vs-smooth/">
       
       
         
       
       
-      <link rel="icon" href="/assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>mocaco</title>
+        <title>Custom Criteria - mocaco</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="/assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -47,7 +51,7 @@
       
     
     
-    <script>__md_scope=new URL("/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -71,6 +75,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#custom-criteria-registration" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -83,7 +92,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/." title="mocaco" class="md-header__button md-logo" aria-label="mocaco" data-md-component="logo">
+    <a href="../.." title="mocaco" class="md-header__button md-logo" aria-label="mocaco" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -103,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Custom Criteria
             
           </span>
         </div>
@@ -219,7 +228,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/." title="mocaco" class="md-nav__button md-logo" aria-label="mocaco" data-md-component="logo">
+    <a href="../.." title="mocaco" class="md-nav__button md-logo" aria-label="mocaco" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -249,7 +258,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -273,18 +282,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
@@ -305,7 +316,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -323,7 +334,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/user-guide/polars-integration/" class="md-nav__link">
+      <a href="../polars-integration/" class="md-nav__link">
         
   
   
@@ -348,10 +359,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/user-guide/custom-criteria/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Criteria
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -367,6 +405,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-criterion-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Criterion Protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -433,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/tutorials/noise-vs-smooth/" class="md-nav__link">
+      <a href="../../tutorials/noise-vs-smooth/" class="md-nav__link">
         
   
   
@@ -515,7 +584,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/methods/clt_absolute/" class="md-nav__link">
+      <a href="../../methods/clt_absolute/" class="md-nav__link">
         
   
   
@@ -550,7 +619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/constitution/" class="md-nav__link">
+      <a href="../../constitution/" class="md-nav__link">
         
   
   
@@ -587,6 +656,27 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-criterion-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Criterion Protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -599,8 +689,39 @@
               
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="custom-criteria-registration">Custom Criteria Registration</h1>
+<p>mocaco is designed to be easily extensible by independent contributors. Adding a new convergence rule only requires creating a single module with a predefined structure and decorating a class with <code>@registry.register()</code>.</p>
+<h2 id="the-criterion-protocol">The Criterion Protocol</h2>
+<p>To register a custom criterion, your class must satisfy the <code>Criterion</code> protocol. It requires:
+1. <strong>Parameters:</strong> Defined as a Pydantic <code>BaseModel</code> for automatic validation.
+2. <strong>Metadata:</strong> <code>name</code>, <code>description</code>, <code>assumptions</code>, <code>limitations</code>, <code>result_interpretation</code>, and <code>references</code>.
+3. <strong>Execution Logic:</strong> A <code>run(self, samples, params)</code> method that computes the logic and returns a <code>ConvergenceResult</code>.</p>
+<p>By placing your module in the <code>mocaco/methods/</code> directory, it is automatically discovered and accessible via the central API (e.g., <code>mcc.convergence.my_custom_rule()</code>), which allow any user using it in future mocaco releases. Alternativelly, you can also create it in your local project to use it easyly.</p>
+<p>Note if you add a custom criterion locally some tools like Pylance will raise a notification such us:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Cannot<span class="w"> </span>access<span class="w"> </span>attribute<span class="w"> </span><span class="s2">"custom_criteria"</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>class<span class="w"> </span><span class="s2">"custom_criteria"</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>Attribute<span class="w"> </span><span class="s2">"custom_criteria"</span><span class="w"> </span>is<span class="w"> </span>unknown
+</code></pre></div></p>
+<p><em>See <code>examples/03_custom_criteria.py</code> for a runnable example.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -637,10 +758,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "/", "features": [], "search": "/assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
