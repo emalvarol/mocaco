@@ -96,7 +96,7 @@ print(result.is_converged)"""
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
 
         # Single-pass evaluation if eval_frequency is not set
-        if params.eval_frequency is None:
+        if params.eval_frequency is None or params.eval_frequency==1:
             agg_df = samples.df.select(
                 [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
             )
@@ -161,7 +161,11 @@ print(result.is_converged)"""
 
         freq = params.eval_frequency
         # Downsample to eval_frequency intervals, ensuring the final point is always included
-        eval_df = full_df.filter((pl.col("n") % freq == 0) | (pl.col("n") == pl.len()))
+        total_rows = full_df.height
+        eval_df = full_df.gather_every(freq, offset=freq - 1)
+
+        if eval_df.is_empty() or eval_df.row(-1, named=True)["n"] != total_rows:
+            eval_df = pl.concat([eval_df, full_df.tail(1)])
 
         final_row = eval_df.row(-1, named=True)
         n_val = int(final_row["n"])

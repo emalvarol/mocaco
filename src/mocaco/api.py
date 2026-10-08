@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     import polars as pl
 
+    from .protocols import Criterion
     from .result import ConvergenceResult
 
 
@@ -56,6 +57,38 @@ class Convergence:
     or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
 
+    def _execute_criterion(
+        self,
+        criterion: Criterion,
+        samples: SampleFrame,
+        kwargs: dict[str, Any],
+    ) -> ConvergenceResult:
+        start_time = time.perf_counter()
+
+        eval_freq_passed = "eval_frequency" in kwargs
+        # Introspección para verificar si eval_frequency es un parámetro nativo del criterio
+        is_native_param = "eval_frequency" in getattr(criterion.params_type, "model_fields", {})
+
+        if eval_freq_passed and not is_native_param:
+            # Fallback: El criterio no lo soporta nativamente, intenta usar EvalFrequencyWrapper
+            eval_frequency = kwargs.pop("eval_frequency")
+            if not getattr(criterion, "supports_eval_frequency", False):
+                raise TypeError(
+                    f"Criterion '{criterion.name}' does not support eval_frequency "
+                    "natively or via wrapper."
+                )
+
+            params = criterion.params_type(**kwargs)
+            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
+            result = wrapper.run(samples=samples, params=params)
+        else:
+            # Ejecución directa (ya sea nativa con eval_frequency o estándar sin eval_frequency)
+            params = criterion.params_type(**kwargs)
+            result = criterion.run(samples=samples, params=params)
+
+        elapsed = time.perf_counter() - start_time
+        return replace(result, execution_time_sec=elapsed)
+
     def __call__(
         self,
         samples: SampleFrame,
@@ -65,45 +98,14 @@ class Convergence:
     ) -> ConvergenceResult:
         """Invoke a registered convergence criterion generically by name."""
         criterion = registry.get(method)
-
-        start_time = time.perf_counter()
-
-        if getattr(criterion, "supports_eval_frequency", False):
-            eval_frequency = kwargs.pop("eval_frequency", None)
-            params = criterion.params_type(**kwargs)
-            if eval_frequency is not None:
-                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-                result = wrapper.run(samples=samples, params=params)
-            else:
-                result = criterion.run(samples=samples, params=params)
-        else:
-            params = criterion.params_type(**kwargs)
-            result = criterion.run(samples=samples, params=params)
-
-        elapsed = time.perf_counter() - start_time
-        return replace(result, execution_time_sec=elapsed)
+        return self._execute_criterion(criterion, samples, kwargs)
 
     def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         """Resolve registered criteria as callable attributes."""
         criterion = registry.get(name)
 
         def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
-            start_time = time.perf_counter()
-
-            if getattr(criterion, "supports_eval_frequency", False):
-                eval_frequency = kwargs.pop("eval_frequency", None)
-                params = criterion.params_type(**kwargs)
-                if eval_frequency is not None:
-                    wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-                    result = wrapper.run(samples=samples, params=params)
-                else:
-                    result = criterion.run(samples=samples, params=params)
-            else:
-                params = criterion.params_type(**kwargs)
-                result = criterion.run(samples=samples, params=params)
-
-            elapsed = time.perf_counter() - start_time
-            return replace(result, execution_time_sec=elapsed)
+            return self._execute_criterion(criterion, samples, kwargs)
 
         return _method
 

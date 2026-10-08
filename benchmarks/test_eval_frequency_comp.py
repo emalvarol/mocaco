@@ -1,5 +1,5 @@
 """Test."""
-# uv run pytest benchmarks/ --benchmark-columns=min,mean,stddev,median,ops --benchmark-sort=mean
+# uv run pytest benchmarks/ --benchmark-json=benchmarks/results.json
 # uv run pytest benchmarks/ --benchmark-histogram=benchmarks/plots/histogram
 import numpy as np
 import polars as pl
@@ -22,10 +22,9 @@ def generate_samples(n_rows: int) -> SampleFrame:
     return mcc.samples(df, target_col="val", it_col="it")
 
 
-@pytest.mark.benchmark(group="eval_frequency_comparison")
-@pytest.mark.parametrize("n_samples", [10_000, 100_000, 1_000_000])
-@pytest.mark.parametrize("eval_freq", [100, 1_000, 10_000])
-@pytest.mark.parametrize("implementation", ["native", "wrapper"])
+@pytest.mark.parametrize("n_samples", [100, 1_000, 10_000])
+@pytest.mark.parametrize("eval_freq", [1, 10, 100])
+@pytest.mark.parametrize("implementation", ["native", "native2"])
 def test_bench_eval_frequency_scaling(
     benchmark: BenchmarkFixture,
     n_samples: int,
@@ -33,18 +32,20 @@ def test_bench_eval_frequency_scaling(
     implementation: str,
 ) -> None:
     """Evalúa el tiempo de ejecución según el tamaño y la frecuencia de evaluación."""
+    benchmark.group = f"N={n_samples} | freq={eval_freq}"
+    benchmark.name = implementation
     samples = generate_samples(n_samples)
 
     if implementation == "native":
         res = benchmark(
-            mcc.convergence.clt_absolute,
+            mcc.convergence.clt_uni_abs,  # type: ignore
             samples,
             threshold=0.01,
             eval_frequency=eval_freq,
         )
     else:
         res = benchmark(
-            mcc.convergence.clt_uni_abs,  # type: ignore
+            mcc.convergence.clt_uni_abs2,  # type: ignore
             samples,
             threshold=0.01,
             eval_frequency=eval_freq,
