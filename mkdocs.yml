@@ -18,6 +18,11 @@ theme:
 
 nav:
   - Home: index.md
+  - User Guide:
+      - Polars Integration: user-guide/polars-integration.md
+      - Custom Criteria: user-guide/custom-criteria.md
+  - Tutorials:
+      - Noise vs Smooth Convergence: tutorials/noise-vs-smooth.md
   - Methods:
       - clt_absolute: methods/clt_absolute.md
   - Constitution: constitution.md

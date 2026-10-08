@@ -7,7 +7,8 @@ from pathlib import Path
 from mocaco.registry import registry
 
 
-def _format_param_table(params_type) -> str:
+def _format_param_table(criterion) -> str:
+    params_type = criterion.params_type
     if not hasattr(params_type, "model_fields"):
         return ""
 
@@ -16,12 +17,21 @@ def _format_param_table(params_type) -> str:
         "|-----------|------|---------|-------------|",
     ]
 
+    # 1. Add Pydantic fields
     for field_name, field_info in params_type.model_fields.items():
         default = "*required*" if field_info.is_required() else f"`{field_info.default!r}`"
-        type_name = str(field_info.annotation)
+        # Get clean type name instead of <class 'type'>
+        type_name = getattr(field_info.annotation, "__name__", str(field_info.annotation))
         desc = field_info.description or ""
 
         lines.append(f"| `{field_name}` | `{type_name}` | {default} | {desc} |")
+
+    # 2. Inject Wrapper parameters if supported
+    if getattr(criterion, "supports_eval_frequency", False):
+        lines.append(
+            "| `eval_frequency` | `int` | `None` | "
+            "Number of rows between successive evaluations (handled via Wrapper). |"
+        )
 
     return "\n".join(lines)
 
@@ -34,7 +44,7 @@ def _generate_method_page(name: str, criterion) -> str:
         "",
         "## Parameters",
         "",
-        _format_param_table(criterion.params_type),
+        _format_param_table(criterion),
         "",
         "## Assumptions",
         "",
@@ -94,7 +104,8 @@ def generate_index_page():
 
     for name in registry.names():
         criterion = registry.get(name)
-        lines.append(f"- [`{name}`](methods/{name}.md) — {criterion.description}")
+        # Fix the relative link since this file will now live inside docs/methods/
+        lines.append(f"- [`{name}`]({name}.md) — {criterion.description}")
 
     lines.append("")
     return "\n".join(lines)
@@ -105,7 +116,8 @@ def main():
     generate_method_docs()
 
     index_content = generate_index_page()
-    index_path = Path("docs/index.md")
+    # Save to docs/methods/index.md instead of docs/index.md to prevent overwriting the Home page
+    index_path = Path("docs/methods/index.md")
     index_path.write_text(index_content, encoding="utf-8")
     print(f"Generated {index_path}")
 
