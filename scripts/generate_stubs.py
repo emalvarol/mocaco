@@ -78,7 +78,7 @@ def generate_api_stub(config: dict):
 
         signature = ", ".join(args)
 
-        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n    ----------\n'
+        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n      ----------\n'
         docstring += "\n".join(doc_params)
         docstring += '\n        """'
 

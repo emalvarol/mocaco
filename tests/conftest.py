@@ -6,7 +6,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from mocaco.methods.clt_absolute import CLTAbsoluteParams
+from mocaco.methods.clt_uni_abs2 import InputParams
 from mocaco.protocols import SampleFrame
 
 
@@ -57,6 +57,6 @@ def sample_df_no_it_frame(sample_df_no_it: pl.DataFrame) -> SampleFrame:
 
 
 @pytest.fixture
-def clt_params() -> CLTAbsoluteParams:
+def clt_params() -> InputParams:
     """Default CLTAbsoluteParams instance."""
-    return CLTAbsoluteParams(threshold=0.1, confidence_level=0.95)
+    return InputParams(threshold=0.1, confidence_level=0.95)

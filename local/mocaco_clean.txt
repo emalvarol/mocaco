@@ -107,13 +107,13 @@ from typing import TYPE_CHECKING, Any
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
-from .wrappers import EvalFrequencyWrapper
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     import polars as pl
 
+    from .protocols import Criterion
     from .result import ConvergenceResult
 
 
@@ -134,6 +134,20 @@ def samples(
 class Convergence:
     
 
+    def _execute_criterion(
+        self,
+        criterion: Criterion,
+        samples: SampleFrame,
+        kwargs: dict[str, Any],
+    ) -> ConvergenceResult:
+        start_time = time.perf_counter()
+
+        params = criterion.params_type(**kwargs)
+        result = criterion.run(samples=samples, params=params)
+
+        elapsed = time.perf_counter() - start_time
+        return replace(result, execution_time_sec=elapsed)
+
     def __call__(
         self,
         samples: SampleFrame,
@@ -143,38 +157,14 @@ class Convergence:
     ) -> ConvergenceResult:
         
         criterion = registry.get(method)
-        eval_frequency = kwargs.pop("eval_frequency", None)
-        params = criterion.params_type(**kwargs)
-
-        start_time = time.perf_counter()
-
-        if eval_frequency is not None:
-            if not getattr(criterion, "supports_eval_frequency", False):
-                raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
-            wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-            result = wrapper.run(samples=samples, params=params)
-        else:
-            result = criterion.run(samples=samples, params=params)
-
-        elapsed = time.perf_counter() - start_time
-        print(elapsed)
-        return replace(result, execution_time_sec=elapsed)
+        return self._execute_criterion(criterion, samples, kwargs)
 
     def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
         
         criterion = registry.get(name)
 
         def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
-            eval_frequency = kwargs.pop("eval_frequency", None)
-            params = criterion.params_type(**kwargs)
-
-            if eval_frequency is not None:
-                if not getattr(criterion, "supports_eval_frequency", False):
-                    raise TypeError(f"Criterion '{criterion.name}' does not support eval_frequency")
-                wrapper = EvalFrequencyWrapper(criterion, eval_frequency=eval_frequency)
-                return wrapper.run(samples=samples, params=params)
-
-            return criterion.run(samples=samples, params=params)
+            return self._execute_criterion(criterion, samples, kwargs)
 
         return _method
 
@@ -616,151 +606,6 @@ class ConvergenceResult:
 
 
 ========================================
-File: src/mocaco/wrappers.py
-========================================
-
-
-
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
-
-import polars as pl
-
-from .protocols import SampleFrame
-from .result import ConvergenceResult
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from .protocols import Criterion
-
-
-class CriterionWrapper:
-    
-
-    def __init__(self, criterion: Criterion) -> None:
-        self._criterion = criterion
-
-    @property
-    def name(self) -> str:
-        return self._criterion.name
-
-    @property
-    def description(self) -> str:
-        return self._criterion.description
-
-    @property
-    def params_type(self) -> type[Any]:
-        return self._criterion.params_type
-
-    @property
-    def assumptions(self) -> Sequence[str]:
-        return self._criterion.assumptions
-
-    @property
-    def limitations(self) -> Sequence[str]:
-        return self._criterion.limitations
-
-    @property
-    def result_interpretation(self) -> str:
-        return self._criterion.result_interpretation
-
-    @property
-    def example_usage(self) -> str:
-        return self._criterion.example_usage
-
-    @property
-    def references(self) -> Sequence[str]:
-        return self._criterion.references
-
-    def run(
-        self,
-        samples: SampleFrame,
-        params: Any,
-    ) -> ConvergenceResult:
-        return self._criterion.run(samples, params)
-
-
-class EvalFrequencyWrapper(CriterionWrapper):
-    
-
-    def __init__(self, criterion: Criterion, eval_frequency: int) -> None:
-        super().__init__(criterion)
-        if eval_frequency <= 0:
-            raise ValueError(f"eval_frequency must be a positive integer, got {eval_frequency}")
-        self._eval_frequency = eval_frequency
-
-    @property
-    def eval_frequency(self) -> int:
-        return self._eval_frequency
-
-    def run(
-        self,
-        samples: SampleFrame,
-        params: Any,
-    ) -> ConvergenceResult:
-        total_rows = len(samples.df)
-
-        if self._eval_frequency >= total_rows:
-            result = self._criterion.run(samples, params)
-            return ConvergenceResult(
-                method=result.method,
-                n=result.n,
-                n_col=result.n_col,
-                estimate=result.estimate,
-                estimate_col=result.estimate_col,
-                error=result.error,
-                error_col=result.error_col,
-                is_converged=result.is_converged,
-                is_converged_col=result.is_converged_col,
-                data=result.data,
-                diagnostics={
-                    **result.diagnostics,
-                    "eval_frequency": self._eval_frequency,
-                    "n_evaluations": 1,
-                },
-            )
-
-        eval_points = list(range(self._eval_frequency, total_rows + 1, self._eval_frequency))
-        if eval_points[-1] != total_rows:
-            eval_points.append(total_rows)
-
-        results: list[ConvergenceResult] = []
-        for point in eval_points:
-            sliced_df = samples.df.head(point)
-            sliced_samples = SampleFrame(
-                df=sliced_df,
-                target_col=samples.target_col,
-                it_col=samples.it_col,
-            )
-            result = self._criterion.run(sliced_samples, params)
-            results.append(result)
-
-        data_frames = [r.data for r in results]
-        combined_data = pl.concat(data_frames, how="align")
-
-        final = results[-1]
-        return ConvergenceResult(
-            method=final.method,
-            n=final.n,
-            n_col=final.n_col,
-            estimate=final.estimate,
-            estimate_col=final.estimate_col,
-            error=final.error,
-            error_col=final.error_col,
-            is_converged=final.is_converged,
-            is_converged_col=final.is_converged_col,
-            data=combined_data,
-            diagnostics={
-                **final.diagnostics,
-                "eval_frequency": self._eval_frequency,
-                "n_evaluations": len(results),
-            },
-        )
-
-
-========================================
 File: src/mocaco/__init__.py
 ========================================
 
@@ -777,7 +622,7 @@ __all__ = [
 
 
 ========================================
-File: src/mocaco/methods/clt_absolute.py
+File: src/mocaco/methods/clt_uni_abs2.py
 ========================================
 
 
@@ -801,7 +646,7 @@ if TYPE_CHECKING:
 
 
 # 1. Criterion input parameters
-class CLTAbsoluteParams(BaseModel):
+class InputParams(BaseModel):
     threshold: float = Field(
         ...,
         gt=0,
@@ -815,20 +660,26 @@ class CLTAbsoluteParams(BaseModel):
         description="Confidence level used for the CLT margin of error.",
     )
 
+    eval_frequency: int | None = Field(
+        default=None,
+        gt=0,
+        description="Step interval for periodic evaluation of convergence history natively in Polars.",
+    )
+
 
 # 2. Criterion logic (calculous)
 @registry.register()
 class CLTAbsoluteCriterion:
-    name = "clt_absolute"
+    name = "clt_uni_abs"
 
-    supports_eval_frequency = True
+    supports_eval_frequency = False
 
     description = (
         "Central Limit Theorem based convergence criterion "
         "using an absolute Monte Carlo error threshold."
     )
 
-    params_type = CLTAbsoluteParams
+    params_type = InputParams
 
     assumptions = (
         "Samples are independent and identically distributed (i.i.d.).",
@@ -858,52 +709,107 @@ class CLTAbsoluteCriterion:
     def run(
         self,
         samples: SampleFrame,
-        params: CLTAbsoluteParams,
+        params: InputParams,
     ) -> ConvergenceResult:
 
         target = pl.col(samples.target_col).cast(pl.Float64)
-
-        agg_df = samples.df.select(
-            [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
-        )
-
-        final = agg_df.row(0, named=True)
-        n = final["n"]
-        mean = final["mean"]
-        std = final["std"] if final["std"] is not None else 0.0
-
-        sem = std / (n**0.5) if n > 0 else 0.0
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
-        abs_error = sem * z_score
 
-        is_converged = abs_error <= params.threshold
+        # Single-pass evaluation if eval_frequency is not set
+        if params.eval_frequency is None or params.eval_frequency==1:
+            agg_df = samples.df.select(
+                [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+            )
 
-        final_df = pl.DataFrame(
-            {
-                "n": [n],
-                "mean": [mean],
-                "std": [std],
-                "sem": [sem],
-                "abs_error": [abs_error],
-                "is_converged": [is_converged],
-            }
+            final = agg_df.row(0, named=True)
+            n = final["n"]
+            mean = final["mean"]
+            std = final["std"] if final["std"] is not None else 0.0
+
+            sem = std / (n**0.5) if n > 0 else 0.0
+            abs_error = sem * z_score
+
+            is_converged = abs_error <= params.threshold
+
+            final_df = pl.DataFrame(
+                {
+                    "n": [n],
+                    "mean": [mean],
+                    "std": [std],
+                    "sem": [sem],
+                    "abs_error": [abs_error],
+                    "is_converged": [is_converged],
+                }
+            )
+
+            return ConvergenceResult(
+                method=self.name,
+                n=int(n),
+                n_col="n",
+                estimate=float(mean) if mean is not None else None,
+                estimate_col="mean",
+                error=float(abs_error),
+                error_col="abs_error",
+                is_converged=is_converged,
+                is_converged_col="is_converged",
+                data=final_df,
+                diagnostics={
+                    "threshold": params.threshold,
+                    "confidence_level": params.confidence_level,
+                    "z_score": z_score,
+                },
+            )
+
+        # Native vectorization in Polars for eval_frequency
+        n_col = pl.int_range(1, pl.len() + 1).alias("n")
+        cum_sum = target.cum_sum()
+        cum_mean = (cum_sum / n_col).alias("mean")
+
+        cum_sq_sum = (target**2).cum_sum()
+        cum_var = (
+            pl.when(n_col > 1)
+            .then(((cum_sq_sum - n_col * (cum_mean**2)) / (n_col - 1)).clip(lower_bound=0.0))
+            .otherwise(0.0)
         )
+        cum_std = cum_var.sqrt().alias("std")
+
+        sem = (cum_std / n_col.sqrt()).alias("sem")
+        abs_error = (sem * z_score).alias("abs_error")
+        is_converged = (abs_error <= params.threshold).alias("is_converged")
+
+        full_df = samples.df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
+
+        freq = params.eval_frequency
+        # Downsample to eval_frequency intervals, ensuring the final point is always included
+        total_rows = full_df.height
+        eval_df = full_df.gather_every(freq, offset=freq - 1)
+
+        if eval_df.is_empty() or eval_df.row(-1, named=True)["n"] != total_rows:
+            eval_df = pl.concat([eval_df, full_df.tail(1)])
+
+        final_row = eval_df.row(-1, named=True)
+        n_val = int(final_row["n"])
+        mean_val = float(final_row["mean"]) if final_row["mean"] is not None else None
+        error_val = float(final_row["abs_error"])
+        is_conv_val = bool(final_row["is_converged"])
 
         return ConvergenceResult(
             method=self.name,
-            n=int(n),
+            n=n_val,
             n_col="n",
-            estimate=float(mean) if mean is not None else None,
+            estimate=mean_val,
             estimate_col="mean",
-            error=float(abs_error),
+            error=error_val,
             error_col="abs_error",
-            is_converged=is_converged,
+            is_converged=is_conv_val,
             is_converged_col="is_converged",
-            data=final_df,
+            data=eval_df,
             diagnostics={
                 "threshold": params.threshold,
                 "confidence_level": params.confidence_level,
                 "z_score": z_score,
+                "eval_frequency": params.eval_frequency,
+                "n_evaluations": len(eval_df),
             },
         )
 
