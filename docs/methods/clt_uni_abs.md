@@ -1,4 +1,4 @@
-# clt_absolute
+# clt_uni_abs
 
 Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
 
@@ -6,15 +6,15 @@ Central Limit Theorem based convergence criterion using an absolute Monte Carlo 
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `threshold` | `<class 'float'>` | *required* | Maximum accepted absolute Monte Carlo error. |
-| `confidence_level` | `<class 'float'>` | `0.95` | Confidence level used for the CLT margin of error. |
-| `stb_window` | `<class 'int'>` | `30` | Minimum number of consecutive iterations meeting the threshold. |
+| `threshold` | `float` | *required* | Maximum accepted absolute Monte Carlo error. |
+| `confidence_level` | `float` | `0.95` | Confidence level used for the CLT margin of error. |
+| `eval_frequency` | `int | None` | `None` | Step interval for periodic evaluation of convergence history natively in Polars. |
 
 ## Assumptions
 
 - Samples are independent and identically distributed (i.i.d.).
 - The target quantity has finite variance.
-- The sample size is sufficiently large for the CLT to provide a normal approximation.
+- The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.
 
 ## Limitations
 
@@ -41,5 +41,4 @@ print(result.is_converged)
 
 ## References
 
-- Robert, C.P. and Casella, G. (2004). Monte Carlo Statistical Methods (2nd ed.). Springer.
-- Asmussen, S. and Glynn, P.W. (2007). Stochastic Simulation: Algorithms and Analysis. Springer.
+- https://en.wikipedia.org/wiki/Central_limit_theorem

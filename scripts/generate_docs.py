@@ -2,9 +2,18 @@
 # Manual run:
 # python scripts/generate_docs.py
 
+import argparse
 from pathlib import Path
 
+import yaml
+
 from mocaco.registry import registry
+
+
+def load_config(config_path: str) -> dict:
+    """Load the YAML configuration file."""
+    with open(config_path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def _format_param_table(criterion) -> str:
@@ -80,9 +89,8 @@ def _generate_method_page(name: str, criterion) -> str:
     return "\n".join(lines)
 
 
-def generate_method_docs():
+def generate_method_docs(docs_dir: Path):
     """Generate automatically the method documentation."""
-    docs_dir = Path("docs/methods")
     docs_dir.mkdir(parents=True, exist_ok=True)
 
     for name in registry.names():
@@ -113,11 +121,21 @@ def generate_index_page():
 
 def main():
     """Run all the pipeline."""
-    generate_method_docs()
+    parser = argparse.ArgumentParser(description="Generate method documentation")
+    parser.add_argument(
+        "--config",
+        default="scripts/generate_config.yaml",
+        help="Path to the generation config file",
+    )
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    docs_dir = Path(config["docs"]["output_dir"])
+
+    generate_method_docs(docs_dir)
 
     index_content = generate_index_page()
-    # Save to docs/methods/index.md instead of docs/index.md to prevent overwriting the Home page
-    index_path = Path("docs/methods/index.md")
+    index_path = docs_dir / "index.md"
     index_path.write_text(index_content, encoding="utf-8")
     print(f"Generated {index_path}")
 

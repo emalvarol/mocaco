@@ -1,0 +1,11 @@
+stubs:
+  output: src/mocaco/api.pyi
+  imports:
+    - "from __future__ import annotations"
+    - "import polars as pl"
+    - "from typing import Optional, Any"
+    - "from .protocols import SampleFrame"
+    - "from .result import ConvergenceResult"
+
+docs:
+  output_dir: docs/methods

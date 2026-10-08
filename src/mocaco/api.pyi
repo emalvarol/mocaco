@@ -13,18 +13,6 @@ def describe(name: str) -> None: ...
 
 class Convergence:
     def __call__(self, samples: SampleFrame, *, method: str, **kwargs: Any) -> ConvergenceResult: ...
-    def clt_absolute(self, samples: SampleFrame, *, threshold: float, confidence_level: float = 0.95) -> ConvergenceResult:
-        """
-        Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
-
-        Parameters
-        ----------
-        threshold : float
-            Maximum accepted absolute Monte Carlo error.
-        confidence_level : float, default 0.95
-            Confidence level used for the CLT margin of error.
-        """
-        ...
     def clt_uni_abs(self, samples: SampleFrame, *, threshold: float, confidence_level: float = 0.95, eval_frequency: int | None = None) -> ConvergenceResult:
         """
         Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.

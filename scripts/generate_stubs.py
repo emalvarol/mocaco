@@ -2,12 +2,21 @@
 # Manual run:
 # python scripts/generate_stubs.py
 
+import argparse
 import inspect
 import re
 from pathlib import Path
 
+import yaml
+
 from mocaco.api import describe, methods, samples
 from mocaco.registry import registry
+
+
+def load_config(config_path: str) -> dict:
+    """Load the YAML configuration file."""
+    with open(config_path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def get_function_stub(func) -> str:
@@ -26,15 +35,13 @@ def get_function_stub(func) -> str:
     return f"def {func.__name__}{sig_str}: ..."
 
 
-def generate_api_stub():
+def generate_api_stub(config: dict):
     """Generate api stubs."""
+    stubs_config = config["stubs"]
+    imports = "\n".join(stubs_config["imports"])
+
     stub_lines = [
-        "from __future__ import annotations",
-        "",
-        "import polars as pl",
-        "from typing import Optional, Any",  # 1. Add Any here
-        "from .protocols import SampleFrame",
-        "from .result import ConvergenceResult",
+        imports,
         "",
         get_function_stub(samples),
         get_function_stub(methods),
@@ -71,7 +78,7 @@ def generate_api_stub():
 
         signature = ", ".join(args)
 
-        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n        ----------\n'
+        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n    ----------\n'
         docstring += "\n".join(doc_params)
         docstring += '\n        """'
 
@@ -82,10 +89,24 @@ def generate_api_stub():
     stub_lines.append("convergence: Convergence")
 
     # Write to api.pyi
-    output_path = Path("src/mocaco/api.pyi")
+    output_path = Path(stubs_config["output"])
     output_path.write_text("\n".join(stub_lines))
     print(f"Successfully generated {output_path}")
 
 
+def main():
+    """Parse arguments and run the stub generation."""
+    parser = argparse.ArgumentParser(description="Generate api stubs")
+    parser.add_argument(
+        "--config",
+        default="scripts/generate_config.yaml",
+        help="Path to the generation config file",
+    )
+    args = parser.parse_args()
+
+    config = load_config(args.config)
+    generate_api_stub(config)
+
+
 if __name__ == "__main__":
-    generate_api_stub()
+    main()
