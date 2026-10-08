@@ -1,9 +1,6 @@
 from __future__ import annotations
-
-from typing import Any
-
 import polars as pl
-
+from typing import Optional, Any
 from .protocols import SampleFrame
 from .result import ConvergenceResult
 
@@ -18,7 +15,7 @@ class Convergence:
         Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
 
         Parameters
-        ----------
+    ----------
         threshold : float
             Maximum accepted absolute Monte Carlo error.
         confidence_level : float, default 0.95
