@@ -1,6 +1,9 @@
 from __future__ import annotations
+
+from typing import Any
+
 import polars as pl
-from typing import Optional, Any
+
 from .protocols import SampleFrame
 from .result import ConvergenceResult
 
@@ -9,13 +12,22 @@ def methods() -> tuple[str, ...]: ...
 def describe(name: str) -> None: ...
 
 class Convergence:
-    def __call__(self, samples: SampleFrame, *, method: str, **kwargs: Any) -> ConvergenceResult: ...
-    def clt_uni_abs(self, samples: SampleFrame, *, threshold: float, confidence_level: float = 0.95, eval_frequency: int | None = None) -> ConvergenceResult:
+    def __call__(
+        self, samples: SampleFrame, *, method: str, **kwargs: Any
+    ) -> ConvergenceResult: ...
+    def clt_uni_abs(
+        self,
+        samples: SampleFrame,
+        *,
+        threshold: float,
+        confidence_level: float = 0.95,
+        eval_frequency: int | None = None,
+    ) -> ConvergenceResult:
         """
         Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
 
         Parameters
-    ----------
+        ----------
         threshold : float
             Maximum accepted absolute Monte Carlo error.
         confidence_level : float, default 0.95
@@ -24,4 +36,5 @@ class Convergence:
             Step interval for periodic evaluation of convergence history natively in Polars.
         """
         ...
+
 convergence: Convergence
