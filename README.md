@@ -7,7 +7,7 @@
 Convergence analysis for Monte Carlo series using Polars DataFrames.
 
 <p align="center">
-  <img src="assets/Logo_v1.png" alt="mocaco logo" width="400"/>
+  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/Logo_v1.png" alt="mocaco logo" width="400"/>
 </p>
 
 The library provides a simple API for applying different convergence and
@@ -26,7 +26,7 @@ df = pl.DataFrame({"it": range(1000), "value": your_samples})
 samples = mcc.samples(df, it_col="it", target_col="value")
 
 # Run a convergence criterion
-result = mcc.convergence.clt_absolute(samples, threshold=0.01)
+result = mcc.convergence.clt_uni_abs(samples, threshold=0.01)
 
 # Inspect results
 print(result.is_converged)  # True/False
@@ -42,17 +42,17 @@ print(result.n)  # Number of samples
 |----------|-------------|
 | `mcc.samples(df, it_col, target_col)` | Create a normalized sample frame from a Polars DataFrame |
 | `mcc.convergence(samples, method="...")` | Generic invocation of any registered criterion |
-| `mcc.convergence.clt_absolute(samples, ...)` | Typed invocation of a specific criterion |
+| `mcc.convergence.clt_uni_abs(samples, ...)` | Typed invocation of a specific criterion |
 | `mcc.methods()` | List all registered convergence criteria |
-| `mcc.describe("clt_absolute")` | Get metadata and parameter info for a criterion |
+| `mcc.describe("clt_uni_abs")` | Get metadata and parameter info for a criterion |
 
 ## Available Methods
 
-- [`clt_absolute`](docs/methods/clt_absolute.md) — CLT-based absolute error threshold
+- [`clt_uni_abs`](docs/methods/clt_uni_abs.md) — CLT-based absolute error threshold
 
 ## Documentation
 
-Full documentation is available in the `docs/` directory or can be built with:
+Full documentation is available at `https://emalvarol.github.io/mocaco/`, in the `docs/` directory, or can be built locally with:
 
 ```bash
 mkdocs serve
