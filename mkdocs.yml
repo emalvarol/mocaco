@@ -17,7 +17,7 @@ theme:
         name: Switch to light mode
 
 nav:
-  - Home: index.md
+  - Home: README.md
   - User Guide:
       - Polars Integration: user-guide/polars-integration.md
       - Custom Criteria: user-guide/custom-criteria.md
