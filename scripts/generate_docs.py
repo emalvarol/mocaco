@@ -82,7 +82,7 @@ def _format_param_table(criterion) -> str:
         "|-----------|------|---------|-------------|",
     ]
 
-    # 1. Add Pydantic fields
+    # Add Pydantic fields
     for field_name, field_info in params_type.model_fields.items():
         default = "*required*" if field_info.is_required() else f"`{field_info.default!r}`"
         # Get clean type name instead of <class 'type'>
@@ -90,13 +90,6 @@ def _format_param_table(criterion) -> str:
         desc = field_info.description or ""
 
         lines.append(f"| `{field_name}` | `{type_name}` | {default} | {desc} |")
-
-    # 2. Inject Wrapper parameters if supported
-    if getattr(criterion, "supports_eval_frequency", False):
-        lines.append(
-            "| `eval_frequency` | `int` | `None` | "
-            "Number of rows between successive evaluations (handled via Wrapper). |"
-        )
 
     return "\n".join(lines)
 

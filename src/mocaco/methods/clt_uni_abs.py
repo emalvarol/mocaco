@@ -45,8 +45,6 @@ class InputParams(BaseModel):
 class CLTAbsoluteCriterion:
     name = "clt_uni_abs"
 
-    supports_eval_frequency = False
-
     description = (
         "Central Limit Theorem based convergence criterion "
         "using an absolute Monte Carlo error threshold."

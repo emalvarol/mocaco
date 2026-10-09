@@ -87,7 +87,6 @@ class Criterion(Protocol):
     """Structural contract implemented by every convergence criterion."""
 
     name: str
-    supports_eval_frequency: bool
     description: str
     params_type: type[Any]
 

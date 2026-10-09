@@ -54,7 +54,6 @@ The main class must:
 
 - Assign a stable, concise, lowercase, descriptive `name` (e.g., `"clt_absolute"`)
 - Set `params_type` to the parameter model
-- Optionally set `supports_eval_frequency`
 - Provide documentation sections: `description`, `assumptions`, `limitations`, `result_interpretation`, `example_usage`, `references`
 - Implement a `run(samples, params)` method that returns a `ConvergenceResult`
 
