@@ -5,23 +5,24 @@ All notable changes to the mocaco project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 — 2026-08-10
+## 0.2.0 — 2026-10-09
 
 ### Added
 - Updated documentation and contribution section.
 - Method execution time measurement and benchmark to compare better method implementation.
 - Automatic documentation and stubs with GITHUB Actions.
+- Updated optional and default dependencies.
 
 ### Changed
 - clt_absolute method is now clt_uni_abs
 
 ### Deprecated
-- wrapper (low performance compared to support at method module level).
+- wrapper removed (low performance compared to support at method module level).
 
 ### Fixed
 - 
 
-## 0.1.0 — 2026-08-09
+## 0.1.0 — 2026-10-07
 
 ### Added
 - Initial library structure: `src/mocaco/`, `docs/`, `tests/`, `scripts/`

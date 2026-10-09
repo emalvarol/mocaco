@@ -1,7 +1,6 @@
 # New planned tasks
 
 ## General (steps to reach 1.0.0 version)
-- [ ] 1. Make pandas, matplotlib optionals dependencies
 - [ ] 2. Add basic criterions:
     - clt_uni_rlt, clt_multi_rlt (vats_2019)
 

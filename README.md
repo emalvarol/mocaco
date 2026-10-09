@@ -85,3 +85,8 @@ uv run ruff check --fix . && uv run ruff format .
 ```bash
 uv run mypy src/
 ```
+
+### pytest
+```bash
+uv run pytest
+```
