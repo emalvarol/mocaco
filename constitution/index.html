@@ -1,0 +1,1311 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Convergence analysis for Monte Carlo series">
+      
+      
+      
+      
+        <link rel="prev" href="../methods/clt_uni_abs/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Constitution - mocaco</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#constitution-of-mocaco" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="mocaco" class="md-header__button md-logo" aria-label="mocaco" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            mocaco
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Constitution
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/emalvarol/mocaco" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="mocaco" class="md-nav__button md-logo" aria-label="mocaco" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    mocaco
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/emalvarol/mocaco" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/polars-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polars Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/custom-criteria/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Criteria
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/noise-vs-smooth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Noise vs Smooth Convergence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methods
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Methods
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../methods/clt_uni_abs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    clt_uni_abs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Constitution
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Constitution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-public-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Public API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-convergence-methods-by-non-expert-contibutors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Convergence Methods by non-expert contibutors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-registry-and-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Registry and Discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-sampleframe-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 SampleFrame Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-result-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Result Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-scientific-correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8. Scientific Correctness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-separation-of-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Separation of Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-automation-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Automation Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-public-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Public API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-convergence-methods-by-non-expert-contibutors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Convergence Methods by non-expert contibutors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-registry-and-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Registry and Discovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-sampleframe-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 SampleFrame Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-result-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Result Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-scientific-correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8. Scientific Correctness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-separation-of-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Separation of Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-automation-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Automation Scripts
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="constitution-of-mocaco">Constitution of mocaco</h1>
+<h2 id="1-purpose">1. Purpose</h2>
+<p>This project provides a small, extensible Python library for diagnosing convergence and stopping conditions in Monte Carlo simulations.</p>
+<p>The library MUST prioritize:</p>
+<ul>
+<li>a simple and intuitive public API;</li>
+<li>statistically well-defined convergence criteria;</li>
+<li>explicit and inspectable method configuration;</li>
+<li>consistent result objects;</li>
+<li>easy extension by independent contributors;</li>
+<li>minimal coupling between the public API and individual convergence methods.</li>
+</ul>
+<p>The library MUST NOT optimize for API complexity merely to accommodate hypothetical future use cases.</p>
+<h2 id="2-public-api">2. Public API</h2>
+<p>The primary user-facing interface SHOULD remain simple.</p>
+<p>The public API MUST NOT require the user to instantiate internal strategy, registry, parameter, or result classes for ordinary use.</p>
+<p>The public API consists of:</p>
+<ul>
+<li><code>mcc.samples(df, *, target_col, it_col=None)</code> — construct a validated <code>SampleFrame</code>;</li>
+<li><code>mcc.convergence(samples, *, method, **kwargs)</code> — execute a criterion by name;</li>
+<li><code>mcc.convergence.&lt;criterion&gt;(samples, **kwargs)</code> — execute a criterion as a typed attribute;</li>
+<li><code>mcc.methods()</code> — list all registered criteria;</li>
+<li><code>mcc.describe(name)</code> — inspect a criterion's metadata and parameters.</li>
+</ul>
+<p>The <code>Convergence</code> class acts as a callable namespace: <code>__call__</code> resolves by name through the registry; <code>__getattr__</code> resolves registered criteria as callable attributes. Both paths time the execution and populate <code>execution_time_sec</code> on the result.</p>
+<h2 id="3-methods">3. Methods</h2>
+<h3 id="31-convergence-methods-by-non-expert-contibutors">3.1 Convergence Methods by non-expert contibutors</h3>
+<p>Each convergence criterion MUST be implemented as an independent method containing primarly its input parameters its math logic and its API use.</p>
+<p>Contributors MUST be able to easily add a new criterion even being non python experts following a method protocol. The addition is done within a single criterion module in <code>methods/</code> by decorating the criterion class with <code>@registry.register()</code>.</p>
+<p>Method identifiers SHOULD be stable, concise, lowercase, and descriptive.</p>
+<p>Every public convergence method MUST document:</p>
+<ul>
+<li>purpose;</li>
+<li>statistical assumptions;</li>
+<li>parameters;</li>
+<li>defaults;</li>
+<li>interpretation of the result;</li>
+<li>limitations;</li>
+<li>example usage.</li>
+</ul>
+<p>The documentation MUST correspond to the actual implementation.</p>
+<p>Parameter documentation MUST NOT be maintained independently when it can be generated from the parameter specification.</p>
+<h3 id="32-protocol">3.2 Protocol</h3>
+<p>The protocol of the method MUST define:</p>
+<ul>
+<li>a method name;</li>
+<li>a parameter specification;</li>
+<li>an execution operation;</li>
+<li>a common result type;</li>
+<li>statistical assumptions and limitations;</li>
+<li>result interpretation guidance;</li>
+<li>an example usage;</li>
+<li>scientific references.</li>
+</ul>
+<p>The full protocol is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Criterion</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">params_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">assumptions</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">limitations</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">result_interpretation</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">example_usage</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">references</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">SampleFrame</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConvergenceResult</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<h3 id="33-parameters">3.3 Parameters</h3>
+<p>Method-specific parameters MUST be explicitly declared.</p>
+<p>Parameter definitions SHOULD be represented by a dedicated parameter object rather than by undocumented <code>**kwargs</code>.</p>
+<p>Parameter definitions SHOULD provide:</p>
+<ul>
+<li>type information;</li>
+<li>default values;</li>
+<li>validation constraints;</li>
+<li>human-readable descriptions.</li>
+</ul>
+<p>The parameter definition SHOULD be the single source of truth for validation and method documentation.</p>
+<h3 id="34-results">3.4 Results</h3>
+<p>All convergence methods MUST return a common <code>ConvergenceResult</code> abstraction.</p>
+<p>&lt; Still needs design &gt;</p>
+<h3 id="35-registry-and-discovery">3.5 Registry and Discovery</h3>
+<p>Convergence methods MUST be discoverable through a registry.</p>
+<p>The registry MUST map stable public method names to their implementations.</p>
+<p>The registry MUST support registration both programmatically, <code>registry.register(criterion)</code>, and as a class decorator, <code>@registry.register()</code>.</p>
+<p>The central API MUST resolve methods through the registry rather than through hard-coded conditional logic.</p>
+<p>The library SHOULD provide a mechanism to inspect available methods and their configuration.</p>
+<h3 id="36-sampleframe-validation">3.6 SampleFrame Validation</h3>
+<p>The <code>SampleFrame</code> dataclass is the single input contract for all criteria. It MUST validate at construction time:</p>
+<ul>
+<li>both <code>target_col</code> and <code>it_col</code> must exist in the source DataFrame;</li>
+<li>both columns must be numeric (integer or float);</li>
+<li>the target column must not contain Null, NaN, or Inf values;</li>
+<li>if <code>it_col</code> is omitted, a sequential <code>it</code> column (1-indexed) MUST be auto-created.</li>
+</ul>
+<h3 id="37-result-contract">3.7 Result Contract</h3>
+<p><code>ConvergenceResult</code> is a frozen dataclass providing:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>method</code></td>
+<td><code>str</code></td>
+<td>Criterion name.</td>
+</tr>
+<tr>
+<td><code>n</code></td>
+<td><code>int</code></td>
+<td>Number of samples used in the final estimate.</td>
+</tr>
+<tr>
+<td><code>n_col</code></td>
+<td><code>str</code></td>
+<td>Name of the n column in the diagnostic data.</td>
+</tr>
+<tr>
+<td><code>estimate</code></td>
+<td><code>float \| None</code></td>
+<td>Final estimate of the target quantity.</td>
+</tr>
+<tr>
+<td><code>estimate_col</code></td>
+<td><code>str</code></td>
+<td>Name of the estimate column in the diagnostic data.</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>float \| None</code></td>
+<td>Final estimated error.</td>
+</tr>
+<tr>
+<td><code>error_col</code></td>
+<td><code>str</code></td>
+<td>Name of the error column in the diagnostic data.</td>
+</tr>
+<tr>
+<td><code>is_converged</code></td>
+<td><code>bool \| None</code></td>
+<td>Whether the final state satisfies the criterion.</td>
+</tr>
+<tr>
+<td><code>is_converged_col</code></td>
+<td><code>str</code></td>
+<td>Name of the is_converged column in the diagnostic data.</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>pl.DataFrame</code></td>
+<td>Full diagnostic DataFrame generated by the method/wrapper.</td>
+</tr>
+<tr>
+<td><code>execution_time_sec</code></td>
+<td><code>float \| None</code></td>
+<td>Execution time measured by the <code>Convergence</code> wrapper.</td>
+</tr>
+<tr>
+<td><code>diagnostics</code></td>
+<td><code>dict[str, Any]</code></td>
+<td>Method-specific diagnostic information.</td>
+</tr>
+</tbody>
+</table>
+<p><code>ConvergenceResult</code> MUST also provide:</p>
+<ul>
+<li><code>summary()</code> — rich console output of the convergence status;</li>
+<li><code>to_polars()</code> / <code>to_pandas()</code> — conversion to DataFrame objects;</li>
+<li><code>plot</code> property returning a <code>ResultPlotter</code> instance.</li>
+</ul>
+<p><code>ResultPlotter</code> MUST provide an <code>evolution()</code> method that visualizes the estimate, error band, and convergence point (requires <code>matplotlib</code>).</p>
+<h3 id="38-scientific-correctness">3.8. Scientific Correctness</h3>
+<p>Statistical terminology MUST be used precisely.</p>
+<p>The library MUST distinguish between:</p>
+<ul>
+<li>Monte Carlo error estimation;</li>
+<li>convergence diagnostics;</li>
+<li>stopping criteria;</li>
+<li>confidence intervals;</li>
+<li>uncertainty quantification;</li>
+<li>properties specific to independent Monte Carlo samples.</li>
+</ul>
+<p>A method MUST document the assumptions under which its convergence or stopping rule is valid.</p>
+<p>Scientific paper citations are required.</p>
+<p>The implementation MUST NOT label a diagnostic as a general convergence proof when it only provides an empirical or probabilistic stopping criterion.</p>
+<p>Defaults MUST be statistically defensible and explicitly documented.</p>
+<p>Whenever a criterion depends on assumptions such as independence, finite variance, asymptotic normality, or a particular sampling structure, those assumptions MUST be visible in its documentation.</p>
+<h2 id="4-separation-of-responsibilities">4. Separation of Responsibilities</h2>
+<p>The architecture MUST keep the following responsibilities separate:</p>
+<ul>
+<li>public API;</li>
+<li>method discovery and registration;</li>
+<li>parameter validation;</li>
+<li>convergence computation;</li>
+<li>result representation.</li>
+</ul>
+<h2 id="5-dependencies">5. Dependencies</h2>
+<p>The project SHOULD minimize dependencies.</p>
+<p>A dependency SHOULD be introduced only when it provides substantial value relative to the complexity it adds.</p>
+<h2 id="6-testing">6. Testing</h2>
+<p>Every convergence criterion MUST have tests covering:</p>
+<ul>
+<li>valid inputs;</li>
+<li>invalid parameters;</li>
+<li>edge cases;</li>
+<li>expected convergence behavior;</li>
+<li>expected non-convergence behavior;</li>
+<li>result structure.</li>
+</ul>
+<p>Tests SHOULD verify statistical properties where practical, rather than only checking implementation-specific numerical values.</p>
+<h2 id="7-automation-scripts">7. Automation Scripts</h2>
+<p>The <code>scripts/</code> directory contains automation tooling:</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generate_stubs.py</code></td>
+<td>Regenerate <code>api.pyi</code> from the registry for IDE autocompletion.</td>
+</tr>
+<tr>
+<td><code>generate_docs.py</code></td>
+<td>Generate documentation from criterion metadata.</td>
+</tr>
+<tr>
+<td><code>generate_config.yaml</code></td>
+<td>Configuration for stub and doc generation.</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>api.pyi</code> file is auto-generated and MUST NOT be edited manually. It is regenerated by running <code>python scripts/generate_stubs.py</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
