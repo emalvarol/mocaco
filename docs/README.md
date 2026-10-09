@@ -48,7 +48,7 @@ print(result.n)  # Number of samples
 
 ## Available Methods
 
-- [`clt_uni_abs`](docs/methods/clt_uni_abs.md) — CLT-based absolute error threshold
+- [`clt_uni_abs`] — CLT-based absolute error threshold
 
 ## Documentation
 

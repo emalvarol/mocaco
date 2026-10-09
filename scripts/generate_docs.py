@@ -168,24 +168,6 @@ def copy_readme_as_home(docs_root: Path) -> None:
     print(f"Copied {readme_source} -> {dest}")
 
 
-def generate_index_page():
-    """Generate automatically the page index."""
-    lines = [
-        "# Convergence Methods",
-        "",
-        "Available convergence criteria in mocaco:",
-        "",
-    ]
-
-    for name in registry.names():
-        criterion = registry.get(name)
-        # Fix the relative link since this file will now live inside docs/methods/
-        lines.append(f"- [`{name}`]({name}.md) — {criterion.description}")
-
-    lines.append("")
-    return "\n".join(lines)
-
-
 def main():
     """Run all the pipeline."""
     parser = argparse.ArgumentParser(description="Generate method documentation")
@@ -218,11 +200,6 @@ def main():
     copy_readme_as_home(docs_root)
 
     generate_method_docs(docs_dir)
-
-    index_content = generate_index_page()
-    index_path = docs_dir / "index.md"
-    index_path.write_text(index_content, encoding="utf-8")
-    print(f"Generated {index_path}")
 
     format_docs_dir_with_ruff(docs_dir)
 
