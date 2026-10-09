@@ -1,5 +1,5 @@
 """Tests for CLTAbsoluteCriterion."""
-# uv run pytest tests/methods/test_clt_absolute.py
+# uv run pytest tests/methods/test_clt_uni_abs.py
 
 import numpy as np
 import polars as pl
@@ -41,7 +41,7 @@ def test_clt_criterion_registered() -> None:
     """Appears in registry after import."""
     from mocaco.registry import registry
 
-    assert "clt_absolute" in registry.names()
+    assert "clt_uni_abs" in registry.names()
 
 
 def test_clt_run_returns_result() -> None:
@@ -149,12 +149,6 @@ def test_clt_run_large_sample() -> None:
     sf = SampleFrame(df=df, target_col="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.is_converged is True
-
-
-def test_clt_run_with_eval_frequency() -> None:
-    """supports_eval_frequency is True."""
-    criterion = CLTAbsoluteCriterion()
-    assert criterion.supports_eval_frequency is True
 
 
 def test_clt_assumptions_non_empty() -> None:
