@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-import matplotlib.pyplot as plt
 import polars as pl
 from rich.console import Console
 from rich.panel import Panel
@@ -41,6 +40,13 @@ class ResultPlotter:
         matplotlib.axes.Axes
             The matplotlib Axes object containing the plot.
         """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ImportError(
+                "Plotting requires matplotlib. Install it via 'uv pip install mocaco[plot]'."
+            ) from exc
+
         df = self.result.data
 
         # Ensure required columns exist

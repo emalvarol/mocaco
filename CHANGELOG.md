@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Updated documentation and contribution section.
 - Method execution time measurement and benchmark to compare better method implementation.
+- Automatic documentation and stubs with GITHUB Actions.
 
 ### Changed
 - clt_absolute method is now clt_uni_abs

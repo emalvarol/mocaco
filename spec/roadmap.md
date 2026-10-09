@@ -1,15 +1,10 @@
 # New planned tasks
 
 ## General (steps to reach 1.0.0 version)
-- [ ] 13. Add basic criterions:
+- [ ] 1. Make pandas, matplotlib optionals dependencies
+- [ ] 2. Add basic criterions:
     - clt_uni_rlt, clt_multi_rlt (vats_2019)
 
-## Minor improvements
-- [ ] Make pandas, matplotlib optionals dependencies
-- [ ] standarize n using it instead
-- [ ] standarize stimate using metric instead
-- [ ] update test_spec with the implemented test
-- [ ] update github actions to run stub and docs script with every pull (is that possible?)
 
 ## GIT
 Rama creada con: git checkout -b feature/user-guide-and-tutorials

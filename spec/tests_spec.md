@@ -28,15 +28,14 @@ This plan defines the strategy for building comprehensive test coverage for the 
 
 ```text
 tests/
-├── conftest.py
-├── test_protocols.py
-├── test_registry.py
-├── test_result.py
-├── test_api.py
-├── test_wrappers.py
-└── methods/
+├ conftest.py
+├ test_protocols.py
+├ test_registry.py
+├ test_result.py
+├ test_api.py
+└ methods/
     ├── __init__.py
-    └── test_clt_absolute.py
+    └── test_clt_uni_abs.py
 ```
 
 ### 2.3 Shared Fixtures (conftest.py)
@@ -47,7 +46,7 @@ tests/
 - `sample_df_with_it` — DataFrame with explicit iteration column
 - `sample_df_no_it` — DataFrame without iteration column
 - `sample_frame` — Pre-built SampleFrame instance
-- `clt_params` — Default CLTAbsoluteParams instance
+- `clt_params` — Default InputParams instance
 
 ---
 
@@ -126,48 +125,28 @@ tests/
 
 | Test | Description |
 |------|-------------|
-| `test_convergence_call_with_method` | convergence(samples, method="clt_absolute") |
+| `test_convergence_call_with_method` | convergence(samples, method="clt_uni_abs") |
 | `test_convergence_call_unknown_method_raises` | ValueError for unregistered method |
-| `test_convergence_getattr_dispatch` | convergence.clt_absolute(samples) |
+| `test_convergence_getattr_dispatch` | convergence.clt_uni_abs(samples) |
 | `test_convergence_getattr_unknown_raises` | ValueError for unknown attribute |
 | `test_convergence_with_eval_frequency` | eval_frequency kwarg triggers wrapper |
 | `test_convergence_eval_frequency_unsupported_raises` | TypeError when criterion doesn't support it |
 | `test_convergence_params_passed_through` | kwargs become params model fields |
 | `test_methods_returns_registered` | mcc.methods() returns expected names |
-| `test_describe_existing_method` | mcc.describe("clt_absolute") prints info |
+| `test_describe_existing_method` | mcc.describe("clt_uni_abs") prints info |
 | `test_describe_unknown_method` | mcc.describe("unknown") prints error |
 | `test_samples_returns_sample_frame` | mcc.samples() returns SampleFrame |
 | `test_samples_passes_columns` | target_col and it_col forwarded correctly |
 
 ---
 
-### 3.5 `wrappers.py` — EvalFrequencyWrapper
+### 3.5 Not implemented — no wrappers module
 
-**File:** `tests/test_wrappers.py`
+The `wrappers.py` module and `tests/test_wrappers.py` are not part of the current implementation. Eval-frequency functionality is natively supported within the `clt_uni_abs` criterion.
 
-| Test | Description |
-|------|-------------|
-| `test_wrapper_delegates_name` | .name matches inner criterion |
-| `test_wrapper_delegates_description` | .description matches inner criterion |
-| `test_wrapper_delegates_params_type` | .params_type matches inner criterion |
-| `test_wrapper_delegates_assumptions` | .assumptions matches inner criterion |
-| `test_wrapper_delegates_limitations` | .limitations matches inner criterion |
-| `test_wrapper_delegates_references` | .references matches inner criterion |
-| `test_wrapper_delegates_result_interpretation` | .result_interpretation matches inner |
-| `test_wrapper_delegates_example_usage` | .example_usage matches inner criterion |
-| `test_eval_frequency_positive_required` | ValueError on eval_frequency <= 0 |
-| `test_eval_frequency_ge_total_rows` | Single evaluation when freq >= rows |
-| `test_eval_frequency_lt_total_rows` | Multiple evaluations with concatenated data |
-| `test_eval_frequency_appends_final` | Last eval includes remaining rows |
-| `test_eval_frequency_diagnostics` | Diagnostics include eval_frequency and n_evaluations |
-| `test_eval_frequency_result_fields` | Final result fields from last evaluation |
-| `test_wrapper_run_delegates` | Base CriterionWrapper.run() calls inner |
+### 3.6 `methods/clt_uni_abs.py` — CLTAbsoluteCriterion
 
----
-
-### 3.6 `methods/clt_absolute.py` — CLTAbsoluteCriterion
-
-**File:** `tests/methods/test_clt_absolute.py`
+**File:** `tests/methods/test_clt_uni_abs.py`
 
 | Test | Description |
 |------|-------------|
@@ -214,7 +193,7 @@ Dedicated test class `TestEdgeCases` in each module test file:
 
 | Test | Description |
 |------|-------------|
-| `test_full_pipeline_clt_absolute` | samples -> convergence -> result -> summary |
+| `test_full_pipeline_clt_uni_abs` | samples -> convergence -> result -> summary |
 | `test_full_pipeline_with_eval_frequency` | Full pipeline with eval_frequency wrapper |
 | `test_method_discovery_flow` | methods() -> describe() -> convergence() |
 | `test_result_export_polars` | to_polars() returns valid DataFrame |
@@ -239,8 +218,7 @@ uv run pytest --cov=mocaco --cov-report=term-missing --cov-report=html
 | registry.py | 60% |
 | result.py | 80% |
 | api.py | 80% |
-| wrappers.py | 80% |
-| methods/clt_absolute.py | 80% |
+| methods/clt_uni_abs.py | 80% |
 | **Overall** | **>= 70%** |
 
 ### 6.3 Known Coverage Gaps (acceptable)
@@ -257,9 +235,8 @@ uv run pytest --cov=mocaco --cov-report=term-missing --cov-report=html
 2. `test_protocols.py` — foundational data structure
 3. `test_registry.py` — method registration
 4. `test_result.py` — result representation
-5. `test_clt_absolute.py` — core criterion logic
-6. `test_wrappers.py` — wrapper behavior
-7. `test_api.py` — public API facade
+5. `test_clt_uni_abs.py` — core criterion logic
+6. `test_api.py` — public API facade
 8. `test_integration.py` — end-to-end flows
 
 ---
