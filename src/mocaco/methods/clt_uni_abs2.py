@@ -96,7 +96,7 @@ print(result.is_converged)"""
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
 
         # Single-pass evaluation if eval_frequency is not set
-        if params.eval_frequency is None or params.eval_frequency==1:
+        if params.eval_frequency is None or params.eval_frequency == 1:
             agg_df = samples.df.select(
                 [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
             )

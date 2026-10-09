@@ -13,6 +13,7 @@ class SimpleMeanParams(BaseModel):
     target_mean: float = Field(..., description="Target value to reach.")
     tolerance: float = Field(0.01, description="Absolute tolerance.")
 
+
 # 2. Create and register the criterion
 @registry.register()
 class SimpleMeanCriterion:
@@ -29,25 +30,19 @@ class SimpleMeanCriterion:
     def run(self, samples, params: SimpleMeanParams) -> ConvergenceResult:
         # Simple logic: calculate cumulative mean of the target column
         target = pl.col(samples.target_col).cast(pl.Float64)
-        agg_df = samples.df.select([
-            pl.len().alias("n"),
-            target.mean().alias("mean")
-        ])
+        agg_df = samples.df.select([pl.len().alias("n"), target.mean().alias("mean")])
 
         final = agg_df.row(0, named=True)
         n = final["n"]
         mean = final["mean"]
 
-        error = abs(mean - params.target_mean) if mean is not None else float('inf')
+        error = abs(mean - params.target_mean) if mean is not None else float("inf")
         is_converged = error <= params.tolerance
 
         # Build diagnostic output
-        final_df = pl.DataFrame({
-            "n": [n],
-            "mean": [mean],
-            "error": [error],
-            "is_converged": [is_converged]
-        })
+        final_df = pl.DataFrame(
+            {"n": [n], "mean": [mean], "error": [error], "is_converged": [is_converged]}
+        )
 
         return ConvergenceResult(
             method=self.name,
@@ -59,13 +54,14 @@ class SimpleMeanCriterion:
             error_col="error",
             is_converged=is_converged,
             is_converged_col="is_converged",
-            data=final_df
+            data=final_df,
         )
+
 
 # 3. Test the custom criterion
 df = pl.DataFrame({"it": range(1, 101), "val": [5.0] * 100})
 samples = mcc.samples(df, it_col="it", target_col="val")
 
 # Because we registered it, it is now available via the API
-result = mcc.convergence.simple_mean(samples, target_mean=5.0, tolerance=0.1) # type:ignore
+result = mcc.convergence.simple_mean(samples, target_mean=5.0, tolerance=0.1)  # type:ignore
 print(f"Custom criterion converged: {result.is_converged}")

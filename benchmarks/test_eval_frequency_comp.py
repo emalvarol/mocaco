@@ -1,4 +1,5 @@
 """Test."""
+
 # uv run pytest benchmarks/ --benchmark-json=benchmarks/results.json
 # uv run pytest benchmarks/ --benchmark-histogram=benchmarks/plots/histogram
 import numpy as np

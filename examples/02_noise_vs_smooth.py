@@ -17,11 +17,7 @@ samples = mcc.samples(df, it_col="it", target_col="value")
 
 # 2. Run criterion using eval_frequency to smooth checks
 # Instead of checking 5000 times, we evaluate every 100 iterations.
-result = mcc.convergence.clt_absolute(
-    samples,
-    threshold=0.1,
-    eval_frequency=100
-)
+result = mcc.convergence.clt_absolute(samples, threshold=0.1, eval_frequency=100)
 
 result.summary()
 

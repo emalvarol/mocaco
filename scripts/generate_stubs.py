@@ -5,6 +5,8 @@
 import argparse
 import inspect
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -17,6 +19,22 @@ def load_config(config_path: str) -> dict:
     """Load the YAML configuration file."""
     with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def format_file_with_ruff(file_path: Path) -> None:
+    """Format and fix a generated file using Ruff if available."""
+    ruff_bin = shutil.which("ruff")
+    if not ruff_bin:
+        print("Warning: ruff executable not found. Skipping auto-formatting.")
+        return
+
+    # 1. Run linter fixes (reordering imports, stripping unused imports)
+    subprocess.run(
+        [ruff_bin, "check", "--fix", "--unsafe-fixes", str(file_path)],
+        check=False,
+    )
+    # 2. Run code formatter
+    subprocess.run([ruff_bin, "format", str(file_path)], check=False)
 
 
 def get_function_stub(func) -> str:
@@ -78,7 +96,7 @@ def generate_api_stub(config: dict):
 
         signature = ", ".join(args)
 
-        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n      ----------\n'
+        docstring = f'        """\n        {criterion.description}\n\n        Parameters\n        ----------\n'
         docstring += "\n".join(doc_params)
         docstring += '\n        """'
 
@@ -90,8 +108,11 @@ def generate_api_stub(config: dict):
 
     # Write to api.pyi
     output_path = Path(stubs_config["output"])
-    output_path.write_text("\n".join(stub_lines))
+    output_path.write_text("\n".join(stub_lines) + "\n", encoding="utf-8")
     print(f"Successfully generated {output_path}")
+
+    # Run Ruff on the generated stub
+    format_file_with_ruff(output_path)
 
 
 def main():

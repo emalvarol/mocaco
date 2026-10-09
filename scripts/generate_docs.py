@@ -3,6 +3,8 @@
 # python scripts/generate_docs.py
 
 import argparse
+import shutil
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -14,6 +16,17 @@ def load_config(config_path: str) -> dict:
     """Load the YAML configuration file."""
     with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def format_docs_dir_with_ruff(docs_dir: Path) -> None:
+    """Format generated markdown files using Ruff if available."""
+    ruff_bin = shutil.which("ruff")
+    if not ruff_bin:
+        print("Warning: ruff executable not found. Skipping docs formatting.")
+        return
+
+    # Formats docstrings and code blocks embedded inside generated Markdown
+    subprocess.run([ruff_bin, "format", str(docs_dir)], check=False)
 
 
 def _format_param_table(criterion) -> str:
@@ -138,6 +151,8 @@ def main():
     index_path = docs_dir / "index.md"
     index_path.write_text(index_content, encoding="utf-8")
     print(f"Generated {index_path}")
+
+    format_docs_dir_with_ruff(docs_dir)
 
 
 if __name__ == "__main__":

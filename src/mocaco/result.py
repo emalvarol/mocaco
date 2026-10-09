@@ -188,7 +188,9 @@ class ConvergenceResult:
         err_str = f"{self.error:.6g}" if self.error is not None else "-"
         table.add_row("[bold]Error:[/bold]", err_str)
         if self.execution_time_sec is not None:
-            table.add_row("[bold]Execution Time:[/bold]", f"{self.execution_time_sec * 1000:.2f} ms")
+            table.add_row(
+                "[bold]Execution Time:[/bold]", f"{self.execution_time_sec * 1000:.2f} ms"
+            )
 
         # Append diagnostics dynamically if they exist
         if self.diagnostics:

@@ -1,13 +1,13 @@
 """Integration with polars DataFrame."""
+
 import polars as pl
 
 import mocaco as mcc
 
 # 1. Prepare simulation data
-df = pl.DataFrame({
-    "iteration": range(1, 1001),
-    "mc_estimate": [1.0 + (1 / i) for i in range(1, 1001)]
-})
+df = pl.DataFrame(
+    {"iteration": range(1, 1001), "mc_estimate": [1.0 + (1 / i) for i in range(1, 1001)]}
+)
 
 # 2. Freeze into a SampleFrame (validates inputs)
 samples = mcc.samples(df, it_col="iteration", target_col="mc_estimate")

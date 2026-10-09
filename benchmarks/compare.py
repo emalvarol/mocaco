@@ -1,5 +1,5 @@
 """Script to analyze benchmark results and calculate exact % improvements."""
-#uv run python benchmarks/compare.py
+# uv run python benchmarks/compare.py
 
 import json
 from pathlib import Path
@@ -22,12 +22,14 @@ def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
     # 1. Extraer datos relevantes
     records = []
     for b in data["benchmarks"]:
-        records.append({
-            "n_samples": int(b["params"]["n_samples"]),
-            "eval_freq": int(b["params"]["eval_freq"]),
-            "implementation": b["params"]["implementation"],
-            "mean_time_sec": b["stats"]["mean"],  # Tiempo medio en segundos
-        })
+        records.append(
+            {
+                "n_samples": int(b["params"]["n_samples"]),
+                "eval_freq": int(b["params"]["eval_freq"]),
+                "implementation": b["params"]["implementation"],
+                "mean_time_sec": b["stats"]["mean"],  # Tiempo medio en segundos
+            }
+        )
 
     df = pl.DataFrame(records)
 
@@ -41,11 +43,15 @@ def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
     # 3. Calcular métricas de mejora
     # Porcentaje de mejora = (tiempo_lento - tiempo_rapido) / tiempo_lento * 100
     # X_times_faster = tiempo_lento / tiempo_rapido
-    result_df = pivot_df.with_columns([
-        ((pl.col("native2") - pl.col("native")) / pl.col("native2") * 100).alias("improvement_pct"),
-        (pl.col("native2") / pl.col("native")).alias("speedup_factor"),
-        (pl.col("native") < pl.col("native2")).alias("native_is_better")
-    ]).sort(["n_samples", "eval_freq"])
+    result_df = pivot_df.with_columns(
+        [
+            ((pl.col("native2") - pl.col("native")) / pl.col("native2") * 100).alias(
+                "improvement_pct"
+            ),
+            (pl.col("native2") / pl.col("native")).alias("speedup_factor"),
+            (pl.col("native") < pl.col("native2")).alias("native_is_better"),
+        ]
+    ).sort(["n_samples", "eval_freq"])
 
     # 4. Imprimir tabla formateada con Rich
     console = Console()
@@ -73,11 +79,12 @@ def analyze_benchmarks(json_path: str = "benchmarks/results.json") -> None:
             t_wrapper,
             ganador,
             mejora,
-            aceleracion
+            aceleracion,
         )
 
     console.print()
     console.print(table)
+
 
 if __name__ == "__main__":
     analyze_benchmarks()
