@@ -35,7 +35,7 @@ import mocaco as mcc
 
 df = pl.DataFrame({"it": range(100), "value": [1.0] * 100})
 samples = mcc.samples(df, it_col="it", target_col="value")
-result = mcc.convergence.clt_absolute(samples, threshold=0.1)
+result = mcc.convergence.clt_uni_abs(samples, threshold=0.1)
 print(result.is_converged)
 ```
 

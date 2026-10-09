@@ -5,6 +5,7 @@
 import argparse
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -16,6 +17,48 @@ def load_config(config_path: str) -> dict:
     """Load the YAML configuration file."""
     with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f)
+
+
+def check_orphan_method_docs(docs_dir: Path) -> list[str]:
+    """Detect .md files in docs_dir that do not correspond to a registered method."""
+    registered = set(registry.names())
+    orphans = []
+    if docs_dir.exists():
+        for md_file in docs_dir.glob("*.md"):
+            if md_file.stem == "index":
+                continue
+            if md_file.stem not in registered:
+                orphans.append(str(md_file))
+    return orphans
+
+
+def check_mkdocs_nav(docs_root: Path) -> list[str]:
+    """Detect broken references in mkdocs.yml nav entries (md files that do not exist)."""
+    mkdocs_path = docs_root.parent / "mkdocs.yml"
+    if not mkdocs_path.exists():
+        return []
+
+    config = yaml.safe_load(mkdocs_path.read_text(encoding="utf-8")) or {}
+    nav = config.get("nav", [])
+    broken = []
+
+    def _walk(entries):
+        for entry in entries:
+            if isinstance(entry, dict):
+                for _label, value in entry.items():
+                    if isinstance(value, str) and value.endswith(".md"):
+                        target = docs_root.parent / value
+                        if not target.exists():
+                            broken.append(value)
+                    elif isinstance(value, list):
+                        _walk(value)
+            elif isinstance(entry, str) and entry.endswith(".md"):
+                target = docs_root.parent / entry
+                if not target.exists():
+                    broken.append(entry)
+
+    _walk(nav)
+    return broken
 
 
 def format_docs_dir_with_ruff(docs_dir: Path) -> None:
@@ -114,6 +157,17 @@ def generate_method_docs(docs_dir: Path):
         print(f"Generated {output_path}")
 
 
+def copy_readme_as_home(docs_root: Path) -> None:
+    """Copy README.md into the docs root as the mkdocs main page."""
+    readme_source = docs_root.parent / "README.md"
+    if not readme_source.exists():
+        print(f"Warning: {readme_source} not found. Skipping README copy.")
+        return
+    dest = docs_root / "README.md"
+    shutil.copy2(readme_source, dest)
+    print(f"Copied {readme_source} -> {dest}")
+
+
 def generate_index_page():
     """Generate automatically the page index."""
     lines = [
@@ -144,6 +198,24 @@ def main():
 
     config = load_config(args.config)
     docs_dir = Path(config["docs"]["output_dir"])
+
+    errors: list[str] = []
+
+    orphans = check_orphan_method_docs(docs_dir)
+    for orphan in orphans:
+        errors.append(f"Orphan doc file: {orphan} (no registered method with that name)")
+
+    broken_nav = check_mkdocs_nav(docs_dir)
+    for ref in broken_nav:
+        errors.append(f"Broken mkdocs.yml nav reference: {ref} (file does not exist)")
+
+    if errors:
+        for err in errors:
+            print(f"ERROR: {err}", file=sys.stderr)
+        sys.exit(1)
+
+    docs_root = docs_dir.parent
+    copy_readme_as_home(docs_root)
 
     generate_method_docs(docs_dir)
 

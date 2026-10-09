@@ -17,14 +17,14 @@ theme:
         name: Switch to light mode
 
 nav:
-  - Home: index.md
+  - Home: README.md
   - User Guide:
       - Polars Integration: user-guide/polars-integration.md
       - Custom Criteria: user-guide/custom-criteria.md
   - Tutorials:
       - Noise vs Smooth Convergence: tutorials/noise-vs-smooth.md
   - Methods:
-      - clt_absolute: methods/clt_absolute.md
+      - clt_uni_abs: methods/clt_uni_abs.md
   - Constitution: constitution.md
 
 markdown_extensions:
