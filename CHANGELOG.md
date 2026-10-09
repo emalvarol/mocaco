@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - clt_absolute method is now clt_uni_abs
 
 ### Deprecated
-- wrapper removed (low performance compared to support at method module level).
+- wrapper and support_eval_frequency removed (low performance compared to support at method module level).
 
 ### Fixed
 - 
