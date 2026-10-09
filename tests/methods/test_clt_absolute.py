@@ -6,7 +6,7 @@ import polars as pl
 import pytest
 from pydantic import ValidationError
 
-from mocaco.methods.clt_uni_abs2 import CLTAbsoluteCriterion, InputParams
+from mocaco.methods.clt_uni_abs import CLTAbsoluteCriterion, InputParams
 from mocaco.protocols import SampleFrame
 
 

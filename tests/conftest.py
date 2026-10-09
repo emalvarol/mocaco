@@ -6,7 +6,7 @@ import numpy as np
 import polars as pl
 import pytest
 
-from mocaco.methods.clt_uni_abs2 import InputParams
+from mocaco.methods.clt_uni_abs import InputParams
 from mocaco.protocols import SampleFrame
 
 

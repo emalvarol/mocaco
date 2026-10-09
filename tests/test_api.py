@@ -15,7 +15,7 @@ def test_convergence_eval_frequency_in_diagnostics() -> None:
     """Eval frequency wrapper injects the frequency value into diagnostics."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
     result = convergence(
-        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
     )
     assert result.diagnostics.get("eval_frequency") == 5
 
@@ -24,7 +24,7 @@ def test_convergence_eval_frequency_count() -> None:
     """Eval frequency wrapper tracks the correct total number of evaluations."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
     result = convergence(
-        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
     )
     assert result.diagnostics.get("n_evaluations") == 4
 
@@ -33,16 +33,16 @@ def test_convergence_eval_frequency_data_length() -> None:
     """Eval frequency wrapper concatenates data matching the evaluation count."""
     df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
     result = convergence(
-        samples(df, target_col="value"), method="clt_absolute", threshold=0.5, eval_frequency=5
+        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
     )
     assert len(result.data) == 4
 
 
 def test_convergence_call_with_method() -> None:
-    """convergence(samples, method="clt_absolute")."""
+    """convergence(samples, method="clt_uni_abs")."""
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     samples = mcc.samples(df, target_col="value", it_col="it")
-    result = convergence(samples=samples, method="clt_absolute", threshold=0.5)
+    result = convergence(samples=samples, method="clt_uni_abs", threshold=0.5)
     assert result is not None
 
 
@@ -55,10 +55,10 @@ def test_convergence_call_unknown_method_raises() -> None:
 
 
 def test_convergence_getattr_dispatch() -> None:
-    """convergence.clt_absolute(samples)."""
+    """convergence.clt_uni_abs(samples)."""
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     samples = mcc.samples(df, target_col="value", it_col="it")
-    result = convergence.clt_absolute(samples, threshold=0.5)  # type: ignore[arg-type]
+    result = convergence.clt_uni_abs(samples, threshold=0.5)  # type: ignore[arg-type]
     assert result is not None
 
 
@@ -72,7 +72,7 @@ def test_convergence_with_eval_frequency() -> None:
     """eval_frequency kwarg triggers wrapper."""
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     samples = mcc.samples(df, target_col="value", it_col="it")
-    result = convergence(samples=samples, method="clt_absolute", threshold=0.5, eval_frequency=10)
+    result = convergence(samples=samples, method="clt_uni_abs", threshold=0.5, eval_frequency=10)
     assert result is not None
 
 
@@ -80,7 +80,7 @@ def test_convergence_eval_frequency_unsupported_raises() -> None:
     """TypeError when criterion does not support eval_frequency."""
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     samples = mcc.samples(df, target_col="value", it_col="it")
-    result = convergence(samples=samples, method="clt_absolute", threshold=0.5, eval_frequency=5)
+    result = convergence(samples=samples, method="clt_uni_abs", threshold=0.5, eval_frequency=5)
     assert result is not None
 
 
@@ -89,7 +89,7 @@ def test_convergence_params_passed_through() -> None:
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
     samples = mcc.samples(df, target_col="value", it_col="it")
     result = convergence(
-        samples=samples, method="clt_absolute", threshold=0.1, confidence_level=0.99
+        samples=samples, method="clt_uni_abs", threshold=0.1, confidence_level=0.99
     )
     assert result is not None
 
@@ -98,12 +98,12 @@ def test_methods_returns_registered() -> None:
     """mcc.methods() returns expected names."""
     names = methods()
     assert isinstance(names, tuple)
-    assert "clt_absolute" in names
+    assert "clt_uni_abs" in names
 
 
 def test_describe_existing_method() -> None:
-    """mcc.describe("clt_absolute") prints info."""
-    describe("clt_absolute")
+    """mcc.describe("clt_uni_abs") prints info."""
+    describe("clt_uni_abs")
 
 
 def test_describe_unknown_method(capsys: pytest.CaptureFixture[str]) -> None:

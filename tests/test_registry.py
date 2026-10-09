@@ -99,7 +99,7 @@ def test_register_overwrite_allows_duplicate() -> None:
 
     @registry.register(overwrite=True)
     class OverwriteCriterion:
-        name = "clt_absolute"
+        name = "clt_uni_abs"
         supports_eval_frequency = True
         description = "Overwritten"
 
@@ -114,7 +114,7 @@ def test_register_overwrite_allows_duplicate() -> None:
         def run(self, samples: Any, params: Any) -> Any:
             pass
 
-    assert registry.names().count("clt_absolute") == 1
+    assert registry.names().count("clt_uni_abs") == 1
 
 
 def test_register_empty_name_raises() -> None:
@@ -141,8 +141,8 @@ def test_register_empty_name_raises() -> None:
 
 def test_get_existing() -> None:
     """Returns correct criterion instance."""
-    criterion = registry.get("clt_absolute")
-    assert criterion.name == "clt_absolute"
+    criterion = registry.get("clt_uni_abs")
+    assert criterion.name == "clt_uni_abs"
 
 
 def test_get_unknown_raises() -> None:
@@ -165,7 +165,7 @@ def test_names_empty_initially() -> None:
 
 def test_describe_existing(capsys) -> None:
     """describe() prints panel and table (capsys)."""
-    registry.describe("clt_absolute")
+    registry.describe("clt_uni_abs")
     captured = capsys.readouterr()
     assert captured.out != ""
 
