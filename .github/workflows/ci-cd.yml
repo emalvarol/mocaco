@@ -1,0 +1,169 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*.*.*"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Restrict global permissions to strictly read-only for security.
+permissions:
+  contents: read
+
+jobs:
+  # Step 1: Generate stubs, docs and auto-fix/format the codebase
+  generate:
+    runs-on: ubuntu-latest
+    # We grant write permission here explicitly for the auto-commit step
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@1044a6dea927916f2c38ba5aeffbc0a847b1221a
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run generation scripts
+        run: |
+          uv run python scripts/generate_stubs.py
+          uv run python scripts/generate_docs.py
+
+      - name: Auto-fix linting and format entire project
+        run: |
+          uv run ruff check --fix --unsafe-fixes .
+          uv run ruff format .
+
+      # Prevent attempting to commit on tag pushes (detached HEAD state)
+      - name: Auto-commit all changes
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(ci): auto-update stubs, docs, and format code"
+  
+  # Step 2: Run CI tests (only after generation completes)
+  ci:
+    needs: generate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@1044a6dea927916f2c38ba5aeffbc0a847b1221a
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --all-extras --dev
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src/
+      - run: uv run pytest
+
+  # Step 3: Deploy documentation
+  deploy-docs:
+    needs: ci
+    # Ensure this only runs on branch pushes to main/master, not on PRs or tags
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    # MkDocs gh-deploy requires write access to push to the gh-pages branch
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@1044a6dea927916f2c38ba5aeffbc0a847b1221a
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version-file: "pyproject.toml"
+      - run: |
+          uv venv
+          uv sync
+      - run: uv run mkdocs gh-deploy --force
+
+  # Step 4: Build distribution packages
+  build:
+    needs: ci
+    # Only run the build and publish steps when a version tag is pushed
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Build distribution 📦
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@1044a6dea927916f2c38ba5aeffbc0a847b1221a
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  # Step 5: Publish to Staging (TestPyPI)
+  publish-to-testpypi:
+    name: Publish to TestPyPI 🧪
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/mocaco
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  # Step 6: Publish to Production (PyPI)
+  publish-to-pypi:
+    name: Publish to PyPI 🚀
+    needs: publish-to-testpypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/mocaco
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
