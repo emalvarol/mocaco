@@ -11,7 +11,7 @@ import polars as pl
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from .result import ConvergenceResult
+    from .result import ConvergenceResult, GroupedConvergenceResult
 
 logger = logging.getLogger(__name__)
 
@@ -25,29 +25,47 @@ class SampleFrame:
     ----------
     df
         Source Polars DataFrame.
-    it_col
-        Column containing the iteration/order of the samples.
     target_col
         Column containing the quantity to analyze.
+    it_col
+        Optional column containing the iteration/order of the samples.
+    group_cols
+        Optional column(s) identifying independent groups for grouped convergence analysis.
     """
 
     df: pl.DataFrame
     target_col: str
     it_col: str | None = None
+    group_cols: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         """Validate columns, assign default iteration indices if missing, and handle edge cases."""
-        # 1. Resolve and normalize it_col name
+        # Normalize group_cols to a list[str]
+        if isinstance(self.group_cols, str):
+            object.__setattr__(self, "group_cols", [self.group_cols])
+        elif self.group_cols is None:
+            object.__setattr__(self, "group_cols", [])
+
+        # Resolve and normalize it_col name
         if self.it_col is None:
             it_col_name = "it"
-            new_df = self.df.with_columns(pl.arange(1, len(self.df) + 1).alias(it_col_name))
+            if self.group_cols:
+                new_df = self.df.with_columns(
+                    pl.int_range(1, pl.len() + 1).over(self.group_cols).alias(it_col_name)
+                )
+            else:
+                new_df = self.df.with_columns(
+                    pl.int_range(1, pl.len() + 1).alias(it_col_name)
+                )
             object.__setattr__(self, "df", new_df)
             object.__setattr__(self, "it_col", it_col_name)
-            logger.info("it_col was None — auto-created column 'it' with sequential indices.")
+            logger.info(
+                f"it_col was None — auto-created column '{it_col_name}' with sequential indices."
+            )
         else:
             it_col_name = self.it_col
 
-        # 2. Validate structural integrity (it_col_name is guaranteed to be str here)
+        # Validate structural integrity (it_col_name is guaranteed to be str here)
         missing = [col for col in (it_col_name, self.target_col) if col not in self.df.columns]
         if missing:
             raise ValueError(
@@ -57,7 +75,7 @@ class SampleFrame:
         if self.df.is_empty():
             raise ValueError("The sample DataFrame cannot be empty.")
 
-        # 3. Validate Data Types (it_col and target_col must be numeric)
+        # Validate Data Types (it_col and target_col must be numeric)
         it_dtype = self.df.get_column(it_col_name).dtype
         if not it_dtype.is_numeric():
             raise TypeError(
@@ -70,7 +88,22 @@ class SampleFrame:
                 f"Target column '{self.target_col}' must be numeric (int or float), got {target.dtype}."
             )
 
-        # 4. Input validation and edge case handling (Null, NaN, Inf)
+        assert isinstance(self.group_cols, list)
+        for col in self.group_cols:
+            dtype = self.df.get_column(col).dtype
+            if not isinstance(dtype, (
+                pl.Int8, pl.Int16, pl.Int32, pl.Int64,
+                pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
+                pl.Float32, pl.Float64,
+                pl.String, pl.Categorical, pl.Enum,
+                pl.Boolean,
+                pl.Date, pl.Datetime,)) and not dtype.is_numeric():
+                raise TypeError(
+                    f"Group column '{col}' has unsupported data type {dtype}. "
+                    "Supported types are numeric, string, categorical, enum, boolean, date, and datetime."
+                )
+
+        # Input validation and edge case handling (Null, NaN, Inf)
         if target.is_null().any():
             raise ValueError(f"Target column '{self.target_col}' contains Null (missing) values.")
 
@@ -100,4 +133,4 @@ class Criterion(Protocol):
         self,
         samples: SampleFrame,
         params: Any,
-    ) -> ConvergenceResult: ...
+    ) -> ConvergenceResult | GroupedConvergenceResult: ...

@@ -3,6 +3,7 @@
 # Mandatory basic modules
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 # Basic modules used to build the criterion (According contributor needs)
@@ -12,7 +13,7 @@ from scipy.stats import norm
 
 # Modules needed from mocaco
 from mocaco.registry import registry
-from mocaco.result import ConvergenceResult
+from mocaco.result import ConvergenceResult, GroupedConvergenceResult
 
 if TYPE_CHECKING:
     from mocaco.protocols import SampleFrame
@@ -55,7 +56,7 @@ class CLTAbsoluteCriterion:
     assumptions = (
         "Samples are independent and identically distributed (i.i.d.).",
         "The target quantity has finite variance.",
-        "The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.",
+        "The sample size is sufficiently large (>30) for the CLT to provide a normal approximation.",
     )
 
     limitations = (
@@ -88,105 +89,146 @@ print(result.is_converged)"""
         self,
         samples: SampleFrame,
         params: InputParams,
-    ) -> ConvergenceResult:
+    ) -> ConvergenceResult | GroupedConvergenceResult:
 
-        target = pl.col(samples.target_col).cast(pl.Float64)
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
 
-        # Single-pass evaluation if eval_frequency is not set
-        if params.eval_frequency is None or params.eval_frequency == 1:
-            agg_df = samples.df.select(
-                [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+        def _evaluate_partition(df: pl.DataFrame) -> ConvergenceResult:
+            # Assumption
+            n_samples = df.height
+            if n_samples < 30:
+                warnings.warn(
+                    f"Sample size n={n_samples} is less than the required minimum of 30 "
+                    "for the Central Limit Theorem normal approximation to hold.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                return ConvergenceResult(
+                    method=self.name,
+                    n=n_samples,
+                    n_col="n",
+                    estimate=None,
+                    estimate_col="mean",
+                    error=None,
+                    error_col="abs_error",
+                    is_converged=False,
+                    is_converged_col="is_converged",
+                    data=pl.DataFrame(),
+                    diagnostics={
+                        "threshold": params.threshold,
+                        "confidence_level": params.confidence_level,
+                        "warning": f"Insufficient sample size (n={n_samples} < 30).",
+                    },
+                )
+
+            target = pl.col(samples.target_col).cast(pl.Float64)
+
+            # Single-pass evaluation if eval_frequency is not set
+            if params.eval_frequency is None or params.eval_frequency == 1:
+                agg_df = samples.df.select(
+                    [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+                )
+
+                final = agg_df.row(0, named=True)
+                n = final["n"]
+                mean = final["mean"]
+                std = final["std"] if final["std"] is not None else 0.0
+
+                sem = std / (n**0.5) if n > 0 else 0.0
+                abs_error = sem * z_score
+
+                is_converged = abs_error <= params.threshold
+
+                final_df = pl.DataFrame(
+                    {
+                        "n": [n],
+                        "mean": [mean],
+                        "std": [std],
+                        "sem": [sem],
+                        "abs_error": [abs_error],
+                        "is_converged": [is_converged],
+                    }
+                )
+
+                return ConvergenceResult(
+                    method=self.name,
+                    n=int(n),
+                    n_col="n",
+                    estimate=float(mean) if mean is not None else None,
+                    estimate_col="mean",
+                    error=float(abs_error),
+                    error_col="abs_error",
+                    is_converged=is_converged,
+                    is_converged_col="is_converged",
+                    data=final_df,
+                    diagnostics={
+                        "threshold": params.threshold,
+                        "confidence_level": params.confidence_level,
+                        "z_score": z_score,
+                    },
+                )
+
+            # Native vectorization in Polars for eval_frequency
+            n_col = pl.int_range(1, pl.len() + 1).alias("n")
+            cum_sum = target.cum_sum()
+            cum_mean = (cum_sum / n_col).alias("mean")
+
+            cum_sq_sum = (target**2).cum_sum()
+            cum_var = (
+                pl.when(n_col > 1)
+                .then(((cum_sq_sum - n_col * (cum_mean**2)) / (n_col - 1)).clip(lower_bound=0.0))
+                .otherwise(0.0)
             )
+            cum_std = cum_var.sqrt().alias("std")
 
-            final = agg_df.row(0, named=True)
-            n = final["n"]
-            mean = final["mean"]
-            std = final["std"] if final["std"] is not None else 0.0
+            sem = (cum_std / n_col.sqrt()).alias("sem")
+            abs_error = (sem * z_score).alias("abs_error")
+            is_converged = (abs_error <= params.threshold).alias("is_converged")
 
-            sem = std / (n**0.5) if n > 0 else 0.0
-            abs_error = sem * z_score
+            full_df = samples.df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
 
-            is_converged = abs_error <= params.threshold
+            freq = params.eval_frequency
+            total_rows = full_df.height
+            eval_df = full_df.gather_every(freq, offset=freq - 1)
 
-            final_df = pl.DataFrame(
-                {
-                    "n": [n],
-                    "mean": [mean],
-                    "std": [std],
-                    "sem": [sem],
-                    "abs_error": [abs_error],
-                    "is_converged": [is_converged],
-                }
-            )
+            if eval_df.is_empty() or eval_df.row(-1, named=True)["n"] != total_rows:
+                eval_df = pl.concat([eval_df, full_df.tail(1)])
+
+            final_row = eval_df.row(-1, named=True)
+            n_val = int(final_row["n"])
+            mean_val = float(final_row["mean"]) if final_row["mean"] is not None else None
+            error_val = float(final_row["abs_error"])
+            is_conv_val = bool(final_row["is_converged"])
 
             return ConvergenceResult(
                 method=self.name,
-                n=int(n),
+                n=n_val,
                 n_col="n",
-                estimate=float(mean) if mean is not None else None,
+                estimate=mean_val,
                 estimate_col="mean",
-                error=float(abs_error),
+                error=error_val,
                 error_col="abs_error",
-                is_converged=is_converged,
+                is_converged=is_conv_val,
                 is_converged_col="is_converged",
-                data=final_df,
+                data=eval_df,
                 diagnostics={
                     "threshold": params.threshold,
                     "confidence_level": params.confidence_level,
                     "z_score": z_score,
+                    "eval_frequency": params.eval_frequency,
+                    "n_evaluations": len(eval_df),
                 },
             )
 
-        # Native vectorization in Polars for eval_frequency
-        n_col = pl.int_range(1, pl.len() + 1).alias("n")
-        cum_sum = target.cum_sum()
-        cum_mean = (cum_sum / n_col).alias("mean")
+        # Route single DataFrame or partitioned DataFrames based on group_cols
+        if samples.group_cols:
+            results = {}
+            partitions = samples.df.partition_by(samples.group_cols, as_dict=True)
+            for group_vals, group_df in partitions.items():
+                if not isinstance(group_vals, tuple):
+                    group_vals = (group_vals,)
+                named_key = tuple(zip(samples.group_cols, group_vals, strict=True))
+                results[named_key] = _evaluate_partition(group_df)
+            return GroupedConvergenceResult(results)
 
-        cum_sq_sum = (target**2).cum_sum()
-        cum_var = (
-            pl.when(n_col > 1)
-            .then(((cum_sq_sum - n_col * (cum_mean**2)) / (n_col - 1)).clip(lower_bound=0.0))
-            .otherwise(0.0)
-        )
-        cum_std = cum_var.sqrt().alias("std")
-
-        sem = (cum_std / n_col.sqrt()).alias("sem")
-        abs_error = (sem * z_score).alias("abs_error")
-        is_converged = (abs_error <= params.threshold).alias("is_converged")
-
-        full_df = samples.df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
-
-        freq = params.eval_frequency
-        # Downsample to eval_frequency intervals, ensuring the final point is always included
-        total_rows = full_df.height
-        eval_df = full_df.gather_every(freq, offset=freq - 1)
-
-        if eval_df.is_empty() or eval_df.row(-1, named=True)["n"] != total_rows:
-            eval_df = pl.concat([eval_df, full_df.tail(1)])
-
-        final_row = eval_df.row(-1, named=True)
-        n_val = int(final_row["n"])
-        mean_val = float(final_row["mean"]) if final_row["mean"] is not None else None
-        error_val = float(final_row["abs_error"])
-        is_conv_val = bool(final_row["is_converged"])
-
-        return ConvergenceResult(
-            method=self.name,
-            n=n_val,
-            n_col="n",
-            estimate=mean_val,
-            estimate_col="mean",
-            error=error_val,
-            error_col="abs_error",
-            is_converged=is_conv_val,
-            is_converged_col="is_converged",
-            data=eval_df,
-            diagnostics={
-                "threshold": params.threshold,
-                "confidence_level": params.confidence_level,
-                "z_score": z_score,
-                "eval_frequency": params.eval_frequency,
-                "n_evaluations": len(eval_df),
-            },
-        )
+        return _evaluate_partition(samples.df)

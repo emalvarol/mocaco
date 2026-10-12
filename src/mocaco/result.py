@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 
 
 class ResultPlotter:
-    """Helper class to provide plotting capabilities for ConvergenceResult."""
+    """Helper class to provide plotting capabilities for ConvergenceResult and GroupedConvergenceResult."""
 
-    def __init__(self, result: ConvergenceResult) -> None:
+    def __init__(self, result: ConvergenceResult | GroupedConvergenceResult) -> None:
         self.result = result
 
     def evolution(
@@ -40,6 +40,17 @@ class ResultPlotter:
         matplotlib.axes.Axes
             The matplotlib Axes object containing the plot.
         """
+        # 1. Guard against direct plotting on a GroupedConvergenceResult
+        if isinstance(self.result, GroupedConvergenceResult):
+            available_groups = [dict(k) for k in self.result]
+            raise TypeError(
+                "Direct evolution plotting on a GroupedConvergenceResult is not supported without selecting a specific group. "
+                "Please index a specific group first, for example: "
+                "result[key].plot.evolution()\n"
+                f"Available groups: {available_groups}"
+            )
+
+        # 2. Check matplotlib dependency
         try:
             import matplotlib.pyplot as plt
         except ImportError as exc:
@@ -105,7 +116,93 @@ class ResultPlotter:
             plt.close(fig)
 
         return ax
+    """
+    def evolution_old(
+        self,
+        *,
+        show: bool = False,
+    ) -> Any:
+        ""
+        Plot the evolution of the estimate, the error band, and the convergence point.
 
+        Requires `matplotlib` to be installed.
+
+        Parameters
+        ----------
+        show
+            If True, automatically displays the plot with `plt.show()` and cleans up resources.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The matplotlib Axes object containing the plot.
+        ""
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ImportError(
+                "Plotting requires matplotlib. Install it via 'uv pip install mocaco[plot]'."
+            ) from exc
+
+        df = self.result.data
+
+        # Ensure required columns exist
+        missing = [
+            col
+            for col in (
+                self.result.estimate_col,
+                self.result.error_col,
+                self.result.n_col,
+                self.result.is_converged_col,
+            )
+            if col not in self.result.data.columns
+        ]
+        if missing:
+            raise ValueError(f"Columns not found in diagnostic data for plotting: {missing}")
+
+        # Extract arrays
+        n_vals = df.get_column(self.result.n_col).to_numpy()
+        estimate_vals = df.get_column(self.result.estimate_col).to_numpy()
+        error_vals = df.get_column(self.result.error_col).to_numpy()
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        # Plot estimate line
+        ax.plot(n_vals, estimate_vals, label="Estimate", color="#1f77b4", linewidth=2)
+
+        # Plot error band
+        ax.fill_between(
+            n_vals,
+            estimate_vals - error_vals,
+            estimate_vals + error_vals,
+            color="#1f77b4",
+            alpha=0.2,
+            label="Error Band",
+        )
+
+        # Plot vertical line for convergence (first True occurrence)
+        converged_df = df.filter(pl.col(self.result.is_converged_col))
+        if not converged_df.is_empty():
+            first_converged_n = converged_df.get_column(self.result.n_col)[0]
+            ax.axvline(
+                x=first_converged_n,
+                color="red",
+                linestyle="--",
+                label=f"Converged at n={first_converged_n}",
+            )
+
+        ax.set_xlabel("Number of samples (n)")
+        ax.set_ylabel("Estimate")
+        ax.set_title(f"Convergence Evolution ({self.result.method})")
+        ax.legend()
+        ax.grid(True, linestyle=":", alpha=0.7)
+
+        if show:
+            plt.show()
+            plt.close(fig)
+
+        return ax
+    """
 
 @dataclass(frozen=True)
 class ConvergenceResult:
@@ -164,6 +261,13 @@ class ConvergenceResult:
     def plot(self) -> ResultPlotter:
         """Access the plotting API for this result."""
         return ResultPlotter(self)
+
+    def __getitem__(self, key: Any) -> ConvergenceResult:
+        """Subscript lookup guard for un-grouped results."""
+        raise TypeError(
+            f"'{type(self).__name__}' object is not subscriptable. "
+            "Group-based indexing is only available when 'group_cols' is specified."
+        )
 
     def to_polars(self) -> pl.DataFrame:
         """Return the complete diagnostic DataFrame as a Polars DataFrame."""
@@ -235,3 +339,47 @@ class ConvergenceResult:
             f"is_converged={self.is_converged!r}, "
             f")"
         )
+
+class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResult]):
+    """
+    Collection of ConvergenceResults mapped by group keys.
+
+    Inherits from dict while exposing combined result properties and metrics.
+    """
+
+    @property
+    def plot(self) -> ResultPlotter:
+        """Access the plotting API for this grouped result collection."""
+        return ResultPlotter(self)
+
+    @property
+    def data(self) -> pl.DataFrame:
+        """Combine diagnostic DataFrames from all groups into a single long-format Polars DataFrame."""
+        dfs = []
+        for group_key, res in self.items():
+            # Attach group column key-values directly to the group DataFrame
+            group_attrs = dict(group_key)
+            df_group = res.data.with_columns(
+                [pl.lit(val).alias(col) for col, val in group_attrs.items()]
+            )
+            dfs.append(df_group)
+
+        return pl.concat(dfs) if dfs else pl.DataFrame()
+
+    @property
+    def is_converged(self) -> bool:
+        """Return True if all groups have converged."""
+        return all(res.is_converged for res in self.values())
+
+    @property
+    def execution_time_sec(self) -> float | None:
+        """Return the total execution time across all evaluated groups."""
+        times = [res.execution_time_sec for res in self.values() if res.execution_time_sec is not None]
+        return sum(times) if times else None
+
+    def summary(self) -> None:
+        """Print formatted summaries for all individual groups."""
+        for group_key, res in self.items():
+            group_str = ", ".join(f"{col}={val}" for col, val in group_key)
+            print(f"\n--- Group ({group_str}) ---")
+            res.summary()

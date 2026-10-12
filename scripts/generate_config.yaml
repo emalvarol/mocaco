@@ -5,7 +5,7 @@ stubs:
     - "import polars as pl"
     - "from typing import Any"
     - "from .protocols import SampleFrame"
-    - "from .result import ConvergenceResult"
+    - "from .result import ConvergenceResult, GroupedConvergenceResult"
 
 docs:
   output_dir: docs/methods

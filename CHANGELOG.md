@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Updated documentation and contribution section.
 - Method execution time measurement and benchmark to compare better method implementation.
-- Automatic documentation and stubs with GITHUB Actions.
+- Compiled automatic documentation, stubs and publish with GITHUB Actions into ci/cd implementation.
 - Updated optional and default dependencies.
+- Added GroupedConvergenceResult result and group_cols as input columns to support automatic convergence estimates on groups.
 
 ### Changed
 - clt_absolute method is now clt_uni_abs
+- criterion protocol now can return a single ConvergenceResult or a GroupedConvergenceResult to support group_cols on methods
 
 ### Deprecated
 - wrapper and support_eval_frequency removed (low performance compared to support at method module level).

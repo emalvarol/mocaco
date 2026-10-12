@@ -13,7 +13,7 @@ df = pl.DataFrame(
 samples = mcc.samples(df, it_col="iteration", target_col="mc_estimate")
 
 # 3. Run a criterion
-result = mcc.convergence.clt_absolute(samples, threshold=0.05)
+result = mcc.convergence.clt_uni_abs(samples, threshold=0.05)
 
 # 4. Extract diagnostics back to Polars for downstream analysis
 diagnostics_df = result.to_polars()

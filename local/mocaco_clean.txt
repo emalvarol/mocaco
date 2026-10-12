@@ -5,14 +5,14 @@ File: README.md
 
 # mocaco
 
-[![CI](https://github.com/emalvarol/mocaco/actions/workflows/ci.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci.yml)
-![Python Versions](https://img.shields.io/badge/python-3.12%20|%203.13%20|%203.14-blue)
+[![Pipeline](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml)
+![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
 Convergence analysis for Monte Carlo series using Polars DataFrames.
 
 <p align="center">
-  <img src="assets/Logo_v1.png" alt="mocaco logo" width="400"/>
+  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/Logo_v1.png" alt="mocaco logo" width="400"/>
 </p>
 
 The library provides a simple API for applying different convergence and
@@ -31,7 +31,7 @@ df = pl.DataFrame({"it": range(1000), "value": your_samples})
 samples = mcc.samples(df, it_col="it", target_col="value")
 
 # Run a convergence criterion
-result = mcc.convergence.clt_absolute(samples, threshold=0.01)
+result = mcc.convergence.clt_uni_abs(samples, threshold=0.01)
 
 # Inspect results
 print(result.is_converged)  # True/False
@@ -47,17 +47,17 @@ print(result.n)  # Number of samples
 |----------|-------------|
 | `mcc.samples(df, it_col, target_col)` | Create a normalized sample frame from a Polars DataFrame |
 | `mcc.convergence(samples, method="...")` | Generic invocation of any registered criterion |
-| `mcc.convergence.clt_absolute(samples, ...)` | Typed invocation of a specific criterion |
+| `mcc.convergence.clt_uni_abs(samples, ...)` | Typed invocation of a specific criterion |
 | `mcc.methods()` | List all registered convergence criteria |
-| `mcc.describe("clt_absolute")` | Get metadata and parameter info for a criterion |
+| `mcc.describe("clt_uni_abs")` | Get metadata and parameter info for a criterion |
 
 ## Available Methods
 
-- [`clt_absolute`](docs/methods/clt_absolute.md) — CLT-based absolute error threshold
+- [`clt_uni_abs`] — CLT-based absolute error threshold
 
 ## Documentation
 
-Full documentation is available in the `docs/` directory or can be built with:
+Full documentation is available at `https://emalvarol.github.io/mocaco/`, in the `docs/` directory, or can be built locally with:
 
 ```bash
 mkdocs serve
@@ -89,6 +89,11 @@ uv run ruff check --fix . && uv run ruff format .
 ### mypy
 ```bash
 uv run mypy src/
+```
+
+### pytest
+```bash
+uv run pytest
 ```
 
 
@@ -211,20 +216,36 @@ class SampleFrame:
     df: pl.DataFrame
     target_col: str
     it_col: str | None = None
+    group_cols: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         
-        # 1. Resolve and normalize it_col name
+        # Normalize group_cols to a list[str]
+        if isinstance(self.group_cols, str):
+            object.__setattr__(self, "group_cols", [self.group_cols])
+        elif self.group_cols is None:
+            object.__setattr__(self, "group_cols", [])
+
+        # Resolve and normalize it_col name
         if self.it_col is None:
             it_col_name = "it"
-            new_df = self.df.with_columns(pl.arange(1, len(self.df) + 1).alias(it_col_name))
+            if self.group_cols:
+                new_df = self.df.with_columns(
+                    pl.int_range(1, pl.len() + 1).over(self.group_cols).alias(it_col_name)
+                )
+            else:
+                new_df = self.df.with_columns(
+                    pl.int_range(1, pl.len() + 1).alias(it_col_name)
+                )
             object.__setattr__(self, "df", new_df)
             object.__setattr__(self, "it_col", it_col_name)
-            logger.info("it_col was None — auto-created column 'it' with sequential indices.")
+            logger.info(
+                f"it_col was None — auto-created column '{it_col_name}' with sequential indices."
+            )
         else:
             it_col_name = self.it_col
 
-        # 2. Validate structural integrity (it_col_name is guaranteed to be str here)
+        # Validate structural integrity (it_col_name is guaranteed to be str here)
         missing = [col for col in (it_col_name, self.target_col) if col not in self.df.columns]
         if missing:
             raise ValueError(
@@ -234,7 +255,7 @@ class SampleFrame:
         if self.df.is_empty():
             raise ValueError("The sample DataFrame cannot be empty.")
 
-        # 3. Validate Data Types (it_col and target_col must be numeric)
+        # Validate Data Types (it_col and target_col must be numeric)
         it_dtype = self.df.get_column(it_col_name).dtype
         if not it_dtype.is_numeric():
             raise TypeError(
@@ -247,7 +268,22 @@ class SampleFrame:
                 f"Target column '{self.target_col}' must be numeric (int or float), got {target.dtype}."
             )
 
-        # 4. Input validation and edge case handling (Null, NaN, Inf)
+        assert isinstance(self.group_cols, list)
+        for col in self.group_cols:
+            dtype = self.df.get_column(col).dtype
+            if not isinstance(dtype, (
+                pl.Int8, pl.Int16, pl.Int32, pl.Int64,
+                pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
+                pl.Float32, pl.Float64,
+                pl.String, pl.Categorical, pl.Enum,
+                pl.Boolean,
+                pl.Date, pl.Datetime,)) and not dtype.is_numeric():
+                raise TypeError(
+                    f"Group column '{col}' has unsupported data type {dtype}. "
+                    "Supported types are numeric, string, categorical, enum, boolean, date, and datetime."
+                )
+
+        # Input validation and edge case handling (Null, NaN, Inf)
         if target.is_null().any():
             raise ValueError(f"Target column '{self.target_col}' contains Null (missing) values.")
 
@@ -264,7 +300,6 @@ class Criterion(Protocol):
     
 
     name: str
-    supports_eval_frequency: bool
     description: str
     params_type: type[Any]
 
@@ -424,7 +459,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-import matplotlib.pyplot as plt
 import polars as pl
 from rich.console import Console
 from rich.panel import Panel
@@ -446,6 +480,13 @@ class ResultPlotter:
         show: bool = False,
     ) -> Any:
         
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ImportError(
+                "Plotting requires matplotlib. Install it via 'uv pip install mocaco[plot]'."
+            ) from exc
+
         df = self.result.data
 
         # Ensure required columns exist
@@ -564,7 +605,9 @@ class ConvergenceResult:
         err_str = f"{self.error:.6g}" if self.error is not None else "-"
         table.add_row("[bold]Error:[/bold]", err_str)
         if self.execution_time_sec is not None:
-            table.add_row("[bold]Execution Time:[/bold]", f"{self.execution_time_sec * 1000:.2f} ms")
+            table.add_row(
+                "[bold]Execution Time:[/bold]", f"{self.execution_time_sec * 1000:.2f} ms"
+            )
 
         # Append diagnostics dynamically if they exist
         if self.diagnostics:
@@ -622,7 +665,232 @@ __all__ = [
 
 
 ========================================
-File: src/mocaco/methods/clt_uni_abs2.py
+File: src/mocaco/methods/clt_uni_abs.py
+========================================
+
+
+
+# Mandatory basic modules
+from __future__ import annotations
+
+import warnings
+from typing import TYPE_CHECKING
+
+# Basic modules used to build the criterion (According contributor needs)
+import polars as pl
+from pydantic import BaseModel, Field
+from scipy.stats import norm
+
+# Modules needed from mocaco
+from mocaco.registry import registry
+from mocaco.result import ConvergenceResult
+
+if TYPE_CHECKING:
+    from mocaco.protocols import SampleFrame
+
+
+# 1. Criterion input parameters
+class InputParams(BaseModel):
+    threshold: float = Field(
+        ...,
+        gt=0,
+        description="Maximum accepted absolute Monte Carlo error.",
+    )
+
+    confidence_level: float = Field(
+        0.95,
+        gt=0,
+        lt=1,
+        description="Confidence level used for the CLT margin of error.",
+    )
+
+    eval_frequency: int | None = Field(
+        default=None,
+        gt=0,
+        description="Step interval for periodic evaluation of convergence history natively in Polars.",
+    )
+
+
+# 2. Criterion logic (calculous)
+@registry.register()
+class CLTAbsoluteCriterion:
+    name = "clt_uni_abs"
+
+    description = (
+        "Central Limit Theorem based convergence criterion "
+        "using an absolute Monte Carlo error threshold."
+    )
+
+    params_type = InputParams
+
+    assumptions = (
+        "Samples are independent and identically distributed (i.i.d.).",
+        "The target quantity has finite variance.",
+        "The sample size is sufficiently large (>30) for the CLT to provide a normal approximation.",
+    )
+
+    limitations = (
+        "This is a probabilistic stopping criterion, not a proof of convergence.",
+        "For small sample sizes, the normal approximation may be inaccurate.",
+        "Does not detect systematic bias or non-stationarity in the sampling process.",
+        "The stability window introduces a lag in detecting convergence.",
+    )
+
+    result_interpretation = (
+        "is_converged is True when the CLT-based absolute error has stayed below "
+        "the threshold for at least stb_window consecutive iterations. "
+        "estimate is the cumulative mean at the final sample. "
+        "error is the CLT-based absolute error (z_score * SEM) at the final sample. "
+        "n is the total number of samples evaluated."
+    )
+
+    example_usage = 
+
+    references = ("https://en.wikipedia.org/wiki/Central_limit_theorem",)
+
+    def run(
+        self,
+        samples: SampleFrame,
+        params: InputParams,
+    ) -> ConvergenceResult:
+
+        # Assumption
+        if samples.group_cols:
+            # Native Polars aggregation handles int, str, float, bool seamlessly
+            group_counts = samples.df.group_by(samples.group_cols).len()
+            min_group_n = group_counts.select(pl.col("len").min()).item()
+            n_samples = int(min_group_n) if min_group_n is not None else 0
+        else:
+            n_samples = samples.df.height
+        if n_samples < 30:
+            warnings.warn(
+                f"Sample size n={n_samples} is less than the required minimum of 30 "
+                "for the Central Limit Theorem normal approximation to hold.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return ConvergenceResult(
+                method=self.name,
+                n=n_samples,
+                n_col="n",
+                estimate=None,
+                estimate_col="mean",
+                error=None,
+                error_col="abs_error",
+                is_converged=False,
+                is_converged_col="is_converged",
+                data=pl.DataFrame(),
+                diagnostics={
+                    "threshold": params.threshold,
+                    "confidence_level": params.confidence_level,
+                    "warning": f"Insufficient sample size (n={n_samples} < 30).",
+                },
+            )
+
+        target = pl.col(samples.target_col).cast(pl.Float64)
+        z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
+
+        # Single-pass evaluation if eval_frequency is not set
+        if params.eval_frequency is None or params.eval_frequency == 1:
+            agg_df = samples.df.select(
+                [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
+            )
+
+            final = agg_df.row(0, named=True)
+            n = final["n"]
+            mean = final["mean"]
+            std = final["std"] if final["std"] is not None else 0.0
+
+            sem = std / (n**0.5) if n > 0 else 0.0
+            abs_error = sem * z_score
+
+            is_converged = abs_error <= params.threshold
+
+            final_df = pl.DataFrame(
+                {
+                    "n": [n],
+                    "mean": [mean],
+                    "std": [std],
+                    "sem": [sem],
+                    "abs_error": [abs_error],
+                    "is_converged": [is_converged],
+                }
+            )
+
+            return ConvergenceResult(
+                method=self.name,
+                n=int(n),
+                n_col="n",
+                estimate=float(mean) if mean is not None else None,
+                estimate_col="mean",
+                error=float(abs_error),
+                error_col="abs_error",
+                is_converged=is_converged,
+                is_converged_col="is_converged",
+                data=final_df,
+                diagnostics={
+                    "threshold": params.threshold,
+                    "confidence_level": params.confidence_level,
+                    "z_score": z_score,
+                },
+            )
+
+        # Native vectorization in Polars for eval_frequency
+        n_col = pl.int_range(1, pl.len() + 1).alias("n")
+        cum_sum = target.cum_sum()
+        cum_mean = (cum_sum / n_col).alias("mean")
+
+        cum_sq_sum = (target**2).cum_sum()
+        cum_var = (
+            pl.when(n_col > 1)
+            .then(((cum_sq_sum - n_col * (cum_mean**2)) / (n_col - 1)).clip(lower_bound=0.0))
+            .otherwise(0.0)
+        )
+        cum_std = cum_var.sqrt().alias("std")
+
+        sem = (cum_std / n_col.sqrt()).alias("sem")
+        abs_error = (sem * z_score).alias("abs_error")
+        is_converged = (abs_error <= params.threshold).alias("is_converged")
+
+        full_df = samples.df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
+
+        freq = params.eval_frequency
+        # Downsample to eval_frequency intervals, ensuring the final point is always included
+        total_rows = full_df.height
+        eval_df = full_df.gather_every(freq, offset=freq - 1)
+
+        if eval_df.is_empty() or eval_df.row(-1, named=True)["n"] != total_rows:
+            eval_df = pl.concat([eval_df, full_df.tail(1)])
+
+        final_row = eval_df.row(-1, named=True)
+        n_val = int(final_row["n"])
+        mean_val = float(final_row["mean"]) if final_row["mean"] is not None else None
+        error_val = float(final_row["abs_error"])
+        is_conv_val = bool(final_row["is_converged"])
+
+        return ConvergenceResult(
+            method=self.name,
+            n=n_val,
+            n_col="n",
+            estimate=mean_val,
+            estimate_col="mean",
+            error=error_val,
+            error_col="abs_error",
+            is_converged=is_conv_val,
+            is_converged_col="is_converged",
+            data=eval_df,
+            diagnostics={
+                "threshold": params.threshold,
+                "confidence_level": params.confidence_level,
+                "z_score": z_score,
+                "eval_frequency": params.eval_frequency,
+                "n_evaluations": len(eval_df),
+            },
+        )
+
+
+========================================
+File: src/mocaco/methods/clt_uni_abs_copy.py
 ========================================
 
 
@@ -670,9 +938,7 @@ class InputParams(BaseModel):
 # 2. Criterion logic (calculous)
 @registry.register()
 class CLTAbsoluteCriterion:
-    name = "clt_uni_abs"
-
-    supports_eval_frequency = False
+    name = "clt_uni_abs_old"
 
     description = (
         "Central Limit Theorem based convergence criterion "
@@ -716,7 +982,7 @@ class CLTAbsoluteCriterion:
         z_score = float(norm.ppf(1.0 - (1.0 - params.confidence_level) / 2.0))
 
         # Single-pass evaluation if eval_frequency is not set
-        if params.eval_frequency is None or params.eval_frequency==1:
+        if params.eval_frequency is None or params.eval_frequency == 1:
             agg_df = samples.df.select(
                 [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
             )

@@ -66,7 +66,7 @@ def generate_api_stub(config: dict):
         get_function_stub(describe),
         "",
         "class Convergence:",
-        "    def __call__(self, samples: SampleFrame, *, method: str, **kwargs: Any) -> ConvergenceResult: ...",
+        "    def __call__(self, samples: SampleFrame, *, method: str, **kwargs: Any) -> ConvergenceResult | GroupedConvergenceResult: ...",
     ]
 
     # Iterate over all registered criteria
@@ -100,7 +100,7 @@ def generate_api_stub(config: dict):
         docstring += "\n".join(doc_params)
         docstring += '\n        """'
 
-        stub_lines.append(f"    def {name}({signature}) -> ConvergenceResult:")
+        stub_lines.append(f"    def {name}({signature}) -> ConvergenceResult | GroupedConvergenceResult:")
         stub_lines.append(docstring)
         stub_lines.append("        ...")
 

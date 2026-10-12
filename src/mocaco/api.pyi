@@ -5,16 +5,22 @@ from typing import Any
 import polars as pl
 
 from .protocols import SampleFrame
-from .result import ConvergenceResult
+from .result import ConvergenceResult, GroupedConvergenceResult
 
-def samples(df: pl.DataFrame, *, target_col: str, it_col: str | None = None) -> SampleFrame: ...
+def samples(
+    df: pl.DataFrame,
+    *,
+    target_col: str,
+    it_col: str | None = None,
+    group_cols: str | list[str] | None = None,
+) -> SampleFrame: ...
 def methods() -> tuple[str, ...]: ...
 def describe(name: str) -> None: ...
 
 class Convergence:
     def __call__(
         self, samples: SampleFrame, *, method: str, **kwargs: Any
-    ) -> ConvergenceResult: ...
+    ) -> ConvergenceResult | GroupedConvergenceResult: ...
     def clt_uni_abs(
         self,
         samples: SampleFrame,
@@ -22,7 +28,28 @@ class Convergence:
         threshold: float,
         confidence_level: float = 0.95,
         eval_frequency: int | None = None,
-    ) -> ConvergenceResult:
+    ) -> ConvergenceResult | GroupedConvergenceResult:
+        """
+        Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
+
+        Parameters
+        ----------
+        threshold : float
+            Maximum accepted absolute Monte Carlo error.
+        confidence_level : float, default 0.95
+            Confidence level used for the CLT margin of error.
+        eval_frequency : int | None, default None
+            Step interval for periodic evaluation of convergence history natively in Polars.
+        """
+        ...
+    def clt_uni_abs_old(
+        self,
+        samples: SampleFrame,
+        *,
+        threshold: float,
+        confidence_level: float = 0.95,
+        eval_frequency: int | None = None,
+    ) -> ConvergenceResult | GroupedConvergenceResult:
         """
         Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
 

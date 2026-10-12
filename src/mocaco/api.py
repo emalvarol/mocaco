@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from . import methods as _methods  # noqa: F401
 from .protocols import SampleFrame
 from .registry import registry
+from .result import ConvergenceResult, GroupedConvergenceResult
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
     import polars as pl
 
     from .protocols import Criterion
-    from .result import ConvergenceResult
 
 
 def samples(
@@ -24,6 +24,7 @@ def samples(
     *,
     target_col: str,
     it_col: str | None = None,
+    group_cols: str | list[str] | None = None
 ) -> SampleFrame:
     """
     Create the normalized and frozen data representation used by convergence criteria.
@@ -33,18 +34,21 @@ def samples(
 
     Parameters
     ----------
-        df
-            Source Polars DataFrame.
-        it_col
-            Column containing the iteration/order of the samples. If the user omit it, it
-            is automatically completed.
-        target_col
-            Column containing the quantity to analyze.
+    df
+        Source Polars DataFrame.
+    target_col
+        Column containing the quantity to analyze.
+    it_col
+        Optional column containing the iteration/order of the samples. If the user omit it, it
+        is automatically completed.
+    group_cols
+        Optional column(s) identifying independent groups for grouped convergence analysis.
     """
     return SampleFrame(
         df=df,
         target_col=target_col,
         it_col=it_col,
+        group_cols=group_cols
     )
 
 
@@ -61,13 +65,26 @@ class Convergence:
         criterion: Criterion,
         samples: SampleFrame,
         kwargs: dict[str, Any],
-    ) -> ConvergenceResult:
+    ) -> ConvergenceResult | GroupedConvergenceResult:
         start_time = time.perf_counter()
 
         params = criterion.params_type(**kwargs)
         result = criterion.run(samples=samples, params=params)
 
         elapsed = time.perf_counter() - start_time
+
+        if isinstance(result, dict):
+            n_groups = len(result)
+            per_group_elapsed = elapsed / n_groups if n_groups > 0 else elapsed
+
+            grouped_dict = GroupedConvergenceResult(
+                {
+                    group_key: replace(res, execution_time_sec=per_group_elapsed)
+                    for group_key, res in result.items()
+                }
+            )
+            return grouped_dict
+
         return replace(result, execution_time_sec=elapsed)
 
     def __call__(
@@ -76,16 +93,20 @@ class Convergence:
         *,
         method: str,
         **kwargs: Any,
-    ) -> ConvergenceResult:
+    ) -> ConvergenceResult | GroupedConvergenceResult:
         """Invoke a registered convergence criterion generically by name."""
         criterion = registry.get(method)
         return self._execute_criterion(criterion, samples, kwargs)
 
-    def __getattr__(self, name: str) -> Callable[..., ConvergenceResult]:
+    def __getattr__(
+        self, name: str
+    ) -> Callable[..., ConvergenceResult | GroupedConvergenceResult]:
         """Resolve registered criteria as callable attributes."""
         criterion = registry.get(name)
 
-        def _method(samples: SampleFrame, **kwargs: Any) -> ConvergenceResult:
+        def _method(
+            samples: SampleFrame, **kwargs: Any
+        ) -> ConvergenceResult | GroupedConvergenceResult:
             return self._execute_criterion(criterion, samples, kwargs)
 
         return _method
