@@ -8,7 +8,7 @@ import mocaco as mcc
 
 SEED = 42
 
-# 1
+# 0
 df_single = pl.DataFrame(
     {
         "group": ["group_a"] * 40 + ["group_b"] * 40,
@@ -121,6 +121,7 @@ with pl.Config(tbl_rows=-1):
     print(result.n)
     print(result.error)
     print(result.error_by(keep=["cat1"]))
+    print(result.error_by(keep=["cat1"])[("cat1", "A"),])
     print(result.estimate)
     print(result.data)
     print(result.execution_time_sec)
@@ -128,6 +129,7 @@ with pl.Config(tbl_rows=-1):
     # Individual
     print(result[(("cat1", "A"), ("cat2", "X"))].n)
     print(result[(("cat1", "A"), ("cat2", "X"))].error)
+    print(result[(("cat1", "A"), ("cat2", "Y"))].error)
     print(result[(("cat1", "A"), ("cat2", "X"))].estimate)
     print(result[(("cat1", "A"), ("cat2", "X"))].execution_time_sec)
     print(result[(("cat1", "A"), ("cat2", "X"))].data)

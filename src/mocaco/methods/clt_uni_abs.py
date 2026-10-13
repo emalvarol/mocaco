@@ -125,7 +125,7 @@ print(result.is_converged)"""
 
             # Single-pass evaluation if eval_frequency is not set
             if params.eval_frequency is None or params.eval_frequency == 1:
-                agg_df = samples.df.select(
+                agg_df = df.select(
                     [pl.len().alias("n"), target.mean().alias("mean"), target.std().alias("std")]
                 )
 
@@ -185,7 +185,7 @@ print(result.is_converged)"""
             abs_error = (sem * z_score).alias("abs_error")
             is_converged = (abs_error <= params.threshold).alias("is_converged")
 
-            full_df = samples.df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
+            full_df = df.select([n_col, cum_mean, cum_std, sem, abs_error, is_converged])
 
             freq = params.eval_frequency
             total_rows = full_df.height

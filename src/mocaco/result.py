@@ -437,7 +437,9 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
 
         aggregated: dict[tuple[tuple[str, Any], ...], list[float]] = {}
         for group_key, res in self.items():
-            sub_key: tuple[tuple[str, Any], ...] = tuple((col, value) for col, value in group_key if col in keep_cols)
+            sub_key: tuple[tuple[str, Any], ...] = tuple(
+                (col, value) for col, value in group_key if col in keep_cols
+            )
             bucket = aggregated.setdefault(sub_key, [])
             if res.error is not None:
                 bucket.append(abs(res.error))
