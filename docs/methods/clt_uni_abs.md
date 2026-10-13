@@ -14,7 +14,7 @@ Central Limit Theorem based convergence criterion using an absolute Monte Carlo 
 
 - Samples are independent and identically distributed (i.i.d.).
 - The target quantity has finite variance.
-- The sample size is sufficiently large for the CLT to provide a normal approximation. The deafult stb_window = 30 aims to support this assumption.
+- The sample size is sufficiently large (>30) for the CLT to provide a normal approximation.
 
 ## Limitations
 

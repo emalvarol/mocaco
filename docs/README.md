@@ -1,6 +1,8 @@
 # mocaco
 
 [![Pipeline](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml)
+![Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
+![PyPI](https://img.shields.io/pypi/v/mocaco?label=pypi)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
