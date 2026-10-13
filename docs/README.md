@@ -1,6 +1,6 @@
 # mocaco
 
-[![Pipeline](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/pipeline.yml)
+[![CI/CD](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
 ![Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
 ![PyPI](https://img.shields.io/pypi/v/mocaco?label=pypi)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
@@ -52,13 +52,15 @@ print(result.n)  # Number of samples
 
 - [`clt_uni_abs`] — CLT-based absolute error threshold
 
-## Documentation
+## Documentation and Changes
 
-Full documentation is available at `https://emalvarol.github.io/mocaco/`, in the `docs/` directory, or can be built locally with:
+Full documentation is available at (https://emalvarol.github.io/mocaco/docs/), in the `docs/` directory, or can be built locally with:
 
 ```bash
 mkdocs serve
 ```
+
+Changes and new features are available at (https://emalvarol.github.io/mocaco/CHANGELOG.md)
 
 ## Installation (Developers)
 
