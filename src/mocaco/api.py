@@ -24,7 +24,7 @@ def samples(
     *,
     target_col: str,
     it_col: str | None = None,
-    group_cols: str | list[str] | None = None
+    group_cols: str | list[str] | None = None,
 ) -> SampleFrame:
     """
     Create the normalized and frozen data representation used by convergence criteria.
@@ -44,12 +44,7 @@ def samples(
     group_cols
         Optional column(s) identifying independent groups for grouped convergence analysis.
     """
-    return SampleFrame(
-        df=df,
-        target_col=target_col,
-        it_col=it_col,
-        group_cols=group_cols
-    )
+    return SampleFrame(df=df, target_col=target_col, it_col=it_col, group_cols=group_cols)
 
 
 class Convergence:
@@ -98,9 +93,7 @@ class Convergence:
         criterion = registry.get(method)
         return self._execute_criterion(criterion, samples, kwargs)
 
-    def __getattr__(
-        self, name: str
-    ) -> Callable[..., ConvergenceResult | GroupedConvergenceResult]:
+    def __getattr__(self, name: str) -> Callable[..., ConvergenceResult | GroupedConvergenceResult]:
         """Resolve registered criteria as callable attributes."""
         criterion = registry.get(name)
 

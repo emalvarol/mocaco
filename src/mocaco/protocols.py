@@ -54,9 +54,7 @@ class SampleFrame:
                     pl.int_range(1, pl.len() + 1).over(self.group_cols).alias(it_col_name)
                 )
             else:
-                new_df = self.df.with_columns(
-                    pl.int_range(1, pl.len() + 1).alias(it_col_name)
-                )
+                new_df = self.df.with_columns(pl.int_range(1, pl.len() + 1).alias(it_col_name))
             object.__setattr__(self, "df", new_df)
             object.__setattr__(self, "it_col", it_col_name)
             logger.info(
@@ -91,13 +89,30 @@ class SampleFrame:
         assert isinstance(self.group_cols, list)
         for col in self.group_cols:
             dtype = self.df.get_column(col).dtype
-            if not isinstance(dtype, (
-                pl.Int8, pl.Int16, pl.Int32, pl.Int64,
-                pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64,
-                pl.Float32, pl.Float64,
-                pl.String, pl.Categorical, pl.Enum,
-                pl.Boolean,
-                pl.Date, pl.Datetime,)) and not dtype.is_numeric():
+            if (
+                not isinstance(
+                    dtype,
+                    (
+                        pl.Int8,
+                        pl.Int16,
+                        pl.Int32,
+                        pl.Int64,
+                        pl.UInt8,
+                        pl.UInt16,
+                        pl.UInt32,
+                        pl.UInt64,
+                        pl.Float32,
+                        pl.Float64,
+                        pl.String,
+                        pl.Categorical,
+                        pl.Enum,
+                        pl.Boolean,
+                        pl.Date,
+                        pl.Datetime,
+                    ),
+                )
+                and not dtype.is_numeric()
+            ):
                 raise TypeError(
                     f"Group column '{col}' has unsupported data type {dtype}. "
                     "Supported types are numeric, string, categorical, enum, boolean, date, and datetime."

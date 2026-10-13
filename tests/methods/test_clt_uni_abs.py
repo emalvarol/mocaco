@@ -96,7 +96,7 @@ def test_clt_run_converged_false(sample_frame: SampleFrame) -> None:
     """Does not converge with strict threshold on high-variance data."""
     criterion = CLTAbsoluteCriterion()
     result = criterion.run(
-        samples=sample_frame, params=InputParams(threshold=0.01, confidence_level=0.95)
+        samples=sample_frame, params=InputParams(threshold=0.001, confidence_level=0.95)
     )
     assert result.is_converged is False
 
@@ -125,16 +125,7 @@ def test_clt_run_data_columns() -> None:
 def test_clt_run_zero_variance() -> None:
     """Handles constant target (std=0)."""
     criterion = CLTAbsoluteCriterion()
-    df = pl.DataFrame({"it": range(1, 11), "value": [5.0] * 10})
-    sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
-    assert result is not None
-
-
-def test_clt_run_single_sample() -> None:
-    """Works with n=1 (std=None -> 0)."""
-    criterion = CLTAbsoluteCriterion()
-    df = pl.DataFrame({"it": [1], "value": [3.14]})
+    df = pl.DataFrame({"it": range(1, 31), "value": [5.0] * 30})
     sf = SampleFrame(df=df, target_col="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result is not None

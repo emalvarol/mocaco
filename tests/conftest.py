@@ -29,13 +29,13 @@ def sample_df_large() -> pl.DataFrame:
 @pytest.fixture
 def sample_df_constant() -> pl.DataFrame:
     """DataFrame with zero variance (all values identical)."""
-    return pl.DataFrame({"it": range(1, 11), "value": [5.0] * 10})
+    return pl.DataFrame({"it": range(1, 31), "value": [5.0] * 30})
 
 
 @pytest.fixture
 def sample_df_with_it() -> pl.DataFrame:
     """DataFrame with explicit iteration column."""
-    return pl.DataFrame({"it": range(1, 21), "measurement": [float(i) for i in range(1, 21)]})
+    return pl.DataFrame({"it": range(1, 31), "measurement": [float(i) for i in range(1, 31)]})
 
 
 @pytest.fixture

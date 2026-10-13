@@ -116,6 +116,7 @@ class ResultPlotter:
             plt.close(fig)
 
         return ax
+
     """
     def evolution_old(
         self,
@@ -203,6 +204,7 @@ class ResultPlotter:
 
         return ax
     """
+
 
 @dataclass(frozen=True)
 class ConvergenceResult:
@@ -340,6 +342,7 @@ class ConvergenceResult:
             f")"
         )
 
+
 class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResult]):
     """
     Collection of ConvergenceResults mapped by group keys.
@@ -351,6 +354,42 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
     def plot(self) -> ResultPlotter:
         """Access the plotting API for this grouped result collection."""
         return ResultPlotter(self)
+
+    @property
+    def n(self) -> int:
+        """Total number of samples evaluated across all groups."""
+        return sum(res.n for res in self.values())
+
+    @property
+    def error(self) -> float | None:
+        """
+        Absolute sum of the errors across all evaluated groups.
+
+        Returns None if no groups have an error calculated.
+        """
+        errors = [abs(res.error) for res in self.values() if res.error is not None]
+        return sum(errors) if errors else None
+
+    @property
+    def estimate(self) -> float | None:
+        """Raises TypeError. Estimates cannot be generically aggregated across groups."""
+        raise TypeError(
+            "Cannot access 'estimate' directly on a GroupedConvergenceResult. "
+            "You must index a specific group first, for example: result[group_key].estimate"
+        )
+
+    @property
+    def diagnostics(self) -> dict[str, Any]:
+        """Raises TypeError. Diagnostics are specific to each group."""
+        raise TypeError(
+            "Cannot access 'diagnostics' directly on a GroupedConvergenceResult. "
+            "You must index a specific group first, for example: result[group_key].diagnostics"
+        )
+
+    @property
+    def is_converged(self) -> bool:
+        """Return True if all groups have converged."""
+        return all(res.is_converged for res in self.values())
 
     @property
     def data(self) -> pl.DataFrame:
@@ -367,15 +406,20 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
         return pl.concat(dfs) if dfs else pl.DataFrame()
 
     @property
-    def is_converged(self) -> bool:
-        """Return True if all groups have converged."""
-        return all(res.is_converged for res in self.values())
-
-    @property
     def execution_time_sec(self) -> float | None:
         """Return the total execution time across all evaluated groups."""
-        times = [res.execution_time_sec for res in self.values() if res.execution_time_sec is not None]
+        times = [
+            res.execution_time_sec for res in self.values() if res.execution_time_sec is not None
+        ]
         return sum(times) if times else None
+
+    def to_polars(self) -> pl.DataFrame:
+        """Return the combined diagnostic DataFrame across all groups as a Polars DataFrame."""
+        return self.data
+
+    def to_pandas(self) -> pd.DataFrame:
+        """Return the combined diagnostic DataFrame across all groups as a Pandas DataFrame."""
+        return self.data.to_pandas()
 
     def summary(self) -> None:
         """Print formatted summaries for all individual groups."""

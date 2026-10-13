@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compiled automatic documentation, stubs and publish with GITHUB Actions into ci/cd implementation.
 - Updated optional and default dependencies.
 - Added GroupedConvergenceResult result and group_cols as input columns to support automatic convergence estimates on groups.
+- Tests to conver new features
 
 ### Changed
 - clt_absolute method is now clt_uni_abs

@@ -22,10 +22,10 @@ df_single = pl.DataFrame(
     }
 )
 samples_single = mcc.samples(
-    df_single.filter(pl.col("group")=="group_a"),
+    df_single.filter(pl.col("group") == "group_a"),
     target_col="value",
     it_col="it",
-    #group_cols="group",
+    # group_cols="group",
 )
 samples_single = mcc.samples(
     df_single,
@@ -40,10 +40,18 @@ result = mcc.convergence.clt_uni_abs(
     eval_frequency=5,
 )
 with pl.Config(tbl_rows=-1):
+    # Grouped
+    print(result.n)
+    print(result.error)
+    print(result.estimate)
     print(result.data)
     print(result.execution_time_sec)
     print(result.summary())
-    print(result[(("group", "group_a"),)].execution_time_sec)  # 0.001 (5_000) # 0.002 (10_000) # 0.005 (100_000)
+    # Individual
+    print(result[(("group", "group_a"),)].n)
+    print(result[(("group", "group_a"),)].error)
+    print(result[(("group", "group_a"),)].estimate)
+    print(result[(("group", "group_a"),)].execution_time_sec)
     print(result[(("group", "group_a"),)].data)
     print(result[(("group", "group_a"),)].summary())
 
@@ -81,9 +89,11 @@ result = mcc.convergence.clt_uni_abs(
 )
 with pl.Config(tbl_rows=-1):
     if isinstance(result, dict):
-        print(result[(("cat1", "A"),("cat2", "X"))].execution_time_sec)  # 0.001 (5_000) # 0.002 (10_000) # 0.005 (100_000)
-        print(result[(("cat1", "A"),("cat2", "X"))].data)
+        print(
+            result[(("cat1", "A"), ("cat2", "X"))].execution_time_sec
+        )  # 0.001 (5_000) # 0.002 (10_000) # 0.005 (100_000)
+        print(result[(("cat1", "A"), ("cat2", "X"))].data)
 
 print(result.data)
 
-ax = result[(("cat1", "A"),("cat2", "X"))].plot.evolution(show=True)
+ax = result[(("cat1", "A"), ("cat2", "X"))].plot.evolution(show=True)

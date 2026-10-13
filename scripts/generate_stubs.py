@@ -100,7 +100,9 @@ def generate_api_stub(config: dict):
         docstring += "\n".join(doc_params)
         docstring += '\n        """'
 
-        stub_lines.append(f"    def {name}({signature}) -> ConvergenceResult | GroupedConvergenceResult:")
+        stub_lines.append(
+            f"    def {name}({signature}) -> ConvergenceResult | GroupedConvergenceResult:"
+        )
         stub_lines.append(docstring)
         stub_lines.append("        ...")
 

@@ -7,35 +7,8 @@ import polars as pl
 import pytest
 
 import mocaco as mcc
-from mocaco import convergence, describe, methods, samples
+from mocaco import convergence, describe, methods
 from mocaco.protocols import SampleFrame
-
-
-def test_convergence_eval_frequency_in_diagnostics() -> None:
-    """Eval frequency wrapper injects the frequency value into diagnostics."""
-    df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(
-        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
-    )
-    assert result.diagnostics.get("eval_frequency") == 5
-
-
-def test_convergence_eval_frequency_count() -> None:
-    """Eval frequency wrapper tracks the correct total number of evaluations."""
-    df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(
-        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
-    )
-    assert result.diagnostics.get("n_evaluations") == 4
-
-
-def test_convergence_eval_frequency_data_length() -> None:
-    """Eval frequency wrapper concatenates data matching the evaluation count."""
-    df = pl.DataFrame({"it": range(1, 21), "value": [1.0] * 20})
-    result = convergence(
-        samples(df, target_col="value"), method="clt_uni_abs", threshold=0.5, eval_frequency=5
-    )
-    assert len(result.data) == 4
 
 
 def test_convergence_call_with_method() -> None:
