@@ -272,6 +272,13 @@ class ConvergenceResult:
 | `to_pandas()` | Return the diagnostic DataFrame as Pandas. |
 | `plot` | Property returning a `ResultPlotter` instance. |
 
+`GroupedConvergenceResult` additionally provides:
+
+| Method | Description |
+|--------|-------------|
+| `error` | Property. Residual absolute sum of the errors across all groups. |
+| `error_by(keep=...)` | Return a mapping from the kept group key to its residual absolute error, aggregating (marginalizing) over every group column not listed in `keep`. |
+
 ### 7.2 ResultPlotter
 
 `ResultPlotter` provides plotting capabilities:

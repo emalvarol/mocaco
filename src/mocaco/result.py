@@ -342,6 +342,34 @@ class ConvergenceResult:
             f")"
         )
 
+    def error_by(self, *, keep: str | list[str]) -> dict[tuple[tuple[str, Any], ...], float | None]:
+        """
+        Return residual absolute error aggregated over group columns not in `keep`.
+
+        This method is only applicable when the result was obtained with ``group_cols``
+        specified. Without grouping, all errors are aggregated into a single value.
+
+        Parameters
+        ----------
+        keep
+            Group column name, or list of names, to keep as distinct entries.
+
+        Returns
+        -------
+        dict[tuple[tuple[str, Any], ...], float | None]
+            Mapping from the kept group key to its aggregated absolute error.
+
+        Raises
+        ------
+        TypeError
+            Always raised, as this method is only applicable when ``group_cols`` was used.
+        """
+        raise TypeError(
+            "Cannot access 'error_by' on a ConvergenceResult without grouping. "
+            "Group-based error aggregation is only available when 'group_cols' is specified. "
+            "Please index a specific group first, for example: result[group_key].error_by(...)"
+        )
+
 
 class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResult]):
     """
@@ -363,12 +391,58 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
     @property
     def error(self) -> float | None:
         """
-        Absolute sum of the errors across all evaluated groups.
+        Residual absolute sum of the errors across all evaluated groups.
 
         Returns None if no groups have an error calculated.
         """
         errors = [abs(res.error) for res in self.values() if res.error is not None]
         return sum(errors) if errors else None
+
+    def error_by(self, *, keep: str | list[str]) -> dict[tuple[tuple[str, Any], ...], float | None]:
+        """
+        Aggregate the residual absolute error over a subset of the grouping dimensions.
+
+        Groups are collapsed (marginalized) over every group column not listed in
+        ``keep``; the absolute errors of the collapsed groups are summed into a
+        residual absolute sum. This allows selective, partial aggregation of grouped
+        results.
+
+        Parameters
+        ----------
+        keep
+            Group column name, or list of names, to keep as distinct entries in the
+            returned mapping. Every other group column is aggregated over.
+
+        Returns
+        -------
+        dict[dict[tuple[tuple[str, Any], ...], float | None]
+            Mapping from the kept group key to its aggregated absolute error. A key
+            maps to None when none of its collapsed groups expose an error.
+
+        Examples
+        --------
+        With ``group_cols=["cat1", "cat2"]``::
+
+            result.error_by(keep=["cat1"])
+            # { (("cat1", "A"),): 0.12, (("cat1", "B"),): 0.09 }
+        """
+        keep_cols = [keep] if isinstance(keep, str) else list(keep)
+        available = {col for group_key in self for col, _ in group_key}
+        unknown = [col for col in keep_cols if col not in available]
+        if unknown:
+            raise ValueError(
+                f"Unknown group column(s) {unknown} for 'keep'. "
+                f"Available group columns: {sorted(available)}."
+            )
+
+        aggregated: dict[tuple[tuple[str, Any], ...], list[float]] = {}
+        for group_key, res in self.items():
+            sub_key: tuple[tuple[str, Any], ...] = tuple((col, value) for col, value in group_key if col in keep_cols)
+            bucket = aggregated.setdefault(sub_key, [])
+            if res.error is not None:
+                bucket.append(abs(res.error))
+
+        return {key: (sum(errors) if errors else None) for key, errors in aggregated.items()}
 
     @property
     def estimate(self) -> float | None:

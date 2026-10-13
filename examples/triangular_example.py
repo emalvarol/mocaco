@@ -16,17 +16,44 @@ df_single = pl.DataFrame(
         "value": np.concatenate(
             [
                 triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED + 1),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 1)),
             ]
         ),
     }
 )
+
 samples_single = mcc.samples(
-    df_single.filter(pl.col("group") == "group_a"),
+    df_single.filter(pl.col("group") == "group_b"),
     target_col="value",
     it_col="it",
-    # group_cols="group",
 )
+
+result = mcc.convergence.clt_uni_abs(
+    samples_single,
+    threshold=0.1,
+    eval_frequency=5,
+)
+
+with pl.Config(tbl_rows=-1):
+    # Individual
+    print(result.summary())
+
+ax = result.plot.evolution(show=True)
+
+# 1
+df_single = pl.DataFrame(
+    {
+        "group": ["group_a"] * 40 + ["group_b"] * 40,
+        "it": list(range(40)) + list(range(40)),
+        "value": np.concatenate(
+            [
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 1)),
+            ]
+        ),
+    }
+)
+
 samples_single = mcc.samples(
     df_single,
     target_col="value",
@@ -39,6 +66,7 @@ result = mcc.convergence.clt_uni_abs(
     threshold=0.1,
     eval_frequency=5,
 )
+
 with pl.Config(tbl_rows=-1):
     # Grouped
     print(result.n)
@@ -67,9 +95,9 @@ df_multi = pl.DataFrame(
         "value": np.concatenate(
             [
                 triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED + 1),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED + 2),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED + 3),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 1)),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 2)),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 3)),
             ]
         ),
     }
@@ -87,13 +115,22 @@ result = mcc.convergence.clt_uni_abs(
     threshold=0.1,
     eval_frequency=5,
 )
-with pl.Config(tbl_rows=-1):
-    if isinstance(result, dict):
-        print(
-            result[(("cat1", "A"), ("cat2", "X"))].execution_time_sec
-        )  # 0.001 (5_000) # 0.002 (10_000) # 0.005 (100_000)
-        print(result[(("cat1", "A"), ("cat2", "X"))].data)
 
-print(result.data)
+with pl.Config(tbl_rows=-1):
+    # Grouped
+    print(result.n)
+    print(result.error)
+    print(result.error_by(keep=["cat1"]))
+    print(result.estimate)
+    print(result.data)
+    print(result.execution_time_sec)
+    print(result.summary())
+    # Individual
+    print(result[(("cat1", "A"), ("cat2", "X"))].n)
+    print(result[(("cat1", "A"), ("cat2", "X"))].error)
+    print(result[(("cat1", "A"), ("cat2", "X"))].estimate)
+    print(result[(("cat1", "A"), ("cat2", "X"))].execution_time_sec)
+    print(result[(("cat1", "A"), ("cat2", "X"))].data)
+    print(result[(("cat1", "A"), ("cat2", "X"))].summary())
 
 ax = result[(("cat1", "A"), ("cat2", "X"))].plot.evolution(show=True)
