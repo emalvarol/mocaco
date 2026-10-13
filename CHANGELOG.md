@@ -2,10 +2,19 @@
 
 All notable changes to the mocaco project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.0 — 2026-10-09
+## [Unreleased]
+- New convergence method: clt_uni_rlt, clt_multi_rlt (vats_2019)
+- New tests:
+    - Use conftest dataframe for tests/methods/test_clt_uni_abs py::test_clt_run_zero_variance
+    - tests analogous to ConvergenceResult for GroupedConvergenceResult
+    - warm-up test for clt_uni_abs
+    - group_cols tests
+    - consider group_cols in benchmarks
+
+## [0.2.0] — 2026-10-09
 
 ### Added
 - Updated documentation and contribution section.
@@ -14,18 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated optional and default dependencies.
 - Added GroupedConvergenceResult result and group_cols as input columns to support automatic convergence estimates on groups.
 - Tests to conver new features
+- Added residual error agregation capability when group_cols is provided
 
 ### Changed
 - clt_absolute method is now clt_uni_abs
 - criterion protocol now can return a single ConvergenceResult or a GroupedConvergenceResult to support group_cols on methods
 
-### Deprecated
+### Removed
 - wrapper and support_eval_frequency removed (low performance compared to support at method module level).
 
-### Fixed
-- 
 
-## 0.1.0 — 2026-10-07
+## [0.1.0] — 2026-10-07
 
 ### Added
 - Initial library structure: `src/mocaco/`, `docs/`, `tests/`, `scripts/`

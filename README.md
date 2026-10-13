@@ -52,13 +52,15 @@ print(result.n)  # Number of samples
 
 - [`clt_uni_abs`] — CLT-based absolute error threshold
 
-## Documentation
+## Documentation and Changes
 
-Full documentation is available at `https://emalvarol.github.io/mocaco/`, in the `docs/` directory, or can be built locally with:
+Full documentation is available at (https://emalvarol.github.io/mocaco/docs/), in the `docs/` directory, or can be built locally with:
 
 ```bash
 mkdocs serve
 ```
+
+Changes and new features are available at (https://emalvarol.github.io/mocaco/CHANGELOG.md)
 
 ## Installation (Developers)
 
