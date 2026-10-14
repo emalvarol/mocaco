@@ -154,6 +154,8 @@ The `SampleFrame` dataclass is the single input contract for all criteria. It MU
 
 `ResultPlotter` MUST provide an `evolution()` method that visualizes the estimate, error band, and convergence point (requires `matplotlib`).
 
+`ResultPlotter` SHOULD provide a `residual_error_evolution(keep=..., filter=..., show=...)` method, available for grouped results, that visualizes the evolution of the aggregated residual error per kept group combination.
+
 ### 3.8. Scientific Correctness
 
 Statistical terminology MUST be used precisely.

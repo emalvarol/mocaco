@@ -129,6 +129,8 @@ with pl.Config(tbl_rows=-1):
     print(result.estimate)
     print(result.data)
     print(result.data_residual_error_by(keep=["cat1"]))
+    print(result.data_residual_error_by(keep=["cat1"], filter={"cat1": "A"}))
+    print(result.data_residual_error_by(keep=["cat1"], filter={"cat1": "B"}))
     print(result.execution_time_sec)
     print(result.summary())
     # Individual
@@ -142,3 +144,7 @@ with pl.Config(tbl_rows=-1):
     print(result[(("cat1", "A"), ("cat2", "X"))].summary())
 
 ax = result[(("cat1", "A"), ("cat2", "X"))].plot.evolution(show=True)
+ax = result[{"cat1": "A", "cat2": "X"}].plot.evolution(show=True)
+ax = result[{"cat1": "A", "cat2": "Y"}].plot.evolution(show=True)
+ax = result.plot.residual_error_evolution(show=True, keep=["cat1"], filter={"cat1": "A"})
+ax = result.plot.residual_error_evolution(show=True, keep=["cat1"], filter={"cat1": "B"})

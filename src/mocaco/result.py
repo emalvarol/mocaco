@@ -196,6 +196,100 @@ class ResultPlotter:
 
         return ax
 
+    def residual_error_evolution(
+        self,
+        *,
+        keep: str | list[str],
+        filter: Mapping[str, Any] | None = None,
+        show: bool = False,
+    ) -> Any:
+        """
+        Plot the evolution of the aggregated residual error across iterations.
+
+        Only available for grouped results. It delegates to
+        :meth:`GroupedConvergenceResult.data_residual_error_by` to obtain the data,
+        then draws one ``res_error`` curve per unique combination of the kept group
+        columns, with a vertical line at the last iteration where ``is_converged`` is
+        True. The y-axis starts at 0 and is capped at the largest residual found.
+
+        Requires `matplotlib` to be installed.
+
+        Parameters
+        ----------
+        keep
+            Group column name, or list of names, kept as distinct curves.
+        filter
+            Optional dict selector restricting the plotted kept groups, e.g.
+            ``{"cat1": "A"}`` or ``{"cat1": ["A", "B"]}``.
+        show
+            If True, automatically displays the plot with `plt.show()` and cleans up resources.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The matplotlib Axes object containing the plot.
+        """
+        # 1. Only grouped results are supported for now
+        if not isinstance(self.result, GroupedConvergenceResult):
+            raise TypeError(
+                "residual_error_evolution is only available for grouped results "
+                "(created with 'group_cols')."
+            )
+
+        # 2. Check matplotlib dependency
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError as exc:
+            raise ImportError(
+                "Plotting requires matplotlib. Install it via 'uv pip install mocaco[plot]'."
+            ) from exc
+
+        keep_cols = [keep] if isinstance(keep, str) else list(keep)
+        df = self.result.data_residual_error_by(keep=keep_cols, filter=filter)
+        if df.is_empty():
+            raise ValueError(
+                "No residual evolution data to plot for the given 'keep' and 'filter'."
+            )
+
+        n_col = self.result.n_col
+        is_converged_col = self.result.is_converged_col
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        combos = df.select(keep_cols).unique(maintain_order=True).iter_rows(named=True)
+        for combo in combos:
+            subset = df.filter([pl.col(col) == value for col, value in combo.items()])
+            n_vals = subset.get_column(n_col).to_numpy()
+            residual_vals = subset.get_column("res_error").to_numpy()
+            label = ", ".join(f"{col}={value}" for col, value in combo.items())
+
+            (line,) = ax.plot(n_vals, residual_vals, marker="o", label=label)
+
+            converged = subset.filter(pl.col(is_converged_col))
+            if not converged.is_empty():
+                last_converged_n = converged.get_column(n_col)[-1]
+                ax.axvline(
+                    x=last_converged_n,
+                    color=line.get_color(),
+                    linestyle="--",
+                    alpha=0.7,
+                )
+
+        max_residual = float(df.get_column("res_error").max())  # type: ignore[arg-type]
+        ax.set_ylim(bottom=0, top=max(max_residual, 1e-12))
+
+        ax.set_xlabel("Number of samples (n)")
+        ax.set_ylabel("Residual error")
+        ax.set_title("Residual Error Evolution")
+        ax.legend()
+        ax.grid(True, linestyle=":", alpha=0.7)
+
+        if show:
+            plt.show()
+            plt.close(fig)
+
+        return ax
+
 
 @dataclass(frozen=True)
 class ConvergenceResult:
@@ -387,7 +481,12 @@ class ConvergenceResult:
             "result[group_key].residual_error_by(...)"
         )
 
-    def data_residual_error_by(self, *, keep: str | list[str]) -> pl.DataFrame:
+    def data_residual_error_by(
+        self,
+        *,
+        keep: str | list[str],
+        filter: Mapping[str, Any] | None = None,
+    ) -> pl.DataFrame:
         """
         Return the evolution of the aggregated residual error over iterations.
 
@@ -537,7 +636,12 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
             {key: (sum(residuals) if residuals else None) for key, residuals in aggregated.items()}
         )
 
-    def data_residual_error_by(self, *, keep: str | list[str]) -> pl.DataFrame:
+    def data_residual_error_by(
+        self,
+        *,
+        keep: str | list[str],
+        filter: Mapping[str, Any] | None = None,
+    ) -> pl.DataFrame:
         """
         Return the evolution of the aggregated residual error over iterations.
 
@@ -557,6 +661,10 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
         keep
             Group column name, or list of names, to keep as distinct entries. Every
             other group column is aggregated over.
+        filter
+            Optional dict selector restricting the returned kept groups. Keys must be
+            kept columns; values can be scalar or a list of accepted values, e.g.
+            ``{"cat1": "A"}`` or ``{"cat1": ["A", "B"]}``.
 
         Returns
         -------
@@ -570,12 +678,14 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
         With ``group_cols=["cat1", "cat2"]``:
 
             evolution = result.data_residual_error_by(keep=["cat1"])
+            subset = result.data_residual_error_by(keep=["cat1"], filter={"cat1": "A"})
 
         Raises
         ------
         ValueError
-            If a kept column is unknown, if the collapsed groups do not share the same
-            ``n`` sequence, or if a group does not expose a ``threshold`` diagnostic.
+            If a kept column is unknown, if a filter key is not kept, if the collapsed
+            groups do not share the same ``n`` sequence, or if a group does not expose a
+            ``threshold`` diagnostic.
         """
         keep_cols = self._resolve_keep_cols(keep)
         n_col = self.n_col
@@ -636,9 +746,34 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
             .sort([*keep_cols, n_col])
         )
 
-        return aggregated.select(
+        result_df = aggregated.select(
             [*keep_cols, n_col, *[f"agg_{c}" for c in value_cols], "res_error", is_converged_col]
         )
+
+        if filter is not None:
+            result_df = result_df.filter(self._build_filter_mask(filter, keep_cols))
+
+        return result_df
+
+    @staticmethod
+    def _build_filter_mask(
+        filter: Mapping[str, Any],
+        keep_cols: list[str],
+    ) -> pl.Expr:
+        """Build a Polars boolean mask from a dict selector over the kept columns."""
+        unknown = [col for col in filter if col not in keep_cols]
+        if unknown:
+            raise ValueError(
+                f"Unknown filter column(s) {sorted(unknown)}. "
+                f"Filter keys must be a subset of the kept columns {keep_cols}."
+            )
+        conditions = [
+            pl.col(col).is_in(value)
+            if isinstance(value, list | tuple | set)
+            else pl.col(col) == value
+            for col, value in filter.items()
+        ]
+        return conditions[0] if len(conditions) == 1 else pl.all_horizontal(conditions)
 
     def _resolve_keep_cols(self, keep: str | list[str]) -> list[str]:
         """Normalize and validate the ``keep`` argument against the available group columns."""
