@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from mocaco.methods.clt_uni_abs import CLTAbsoluteCriterion, InputParams
 from mocaco.protocols import SampleFrame
+from mocaco.result import GroupedConvergenceResult
 
 
 def test_clt_params_threshold_required() -> None:
@@ -122,13 +123,49 @@ def test_clt_run_data_columns() -> None:
     assert set(result.data.columns) == expected_cols
 
 
-def test_clt_run_zero_variance() -> None:
+def test_clt_run_zero_variance(sample_frame_constant: SampleFrame) -> None:
     """Handles constant target (std=0)."""
     criterion = CLTAbsoluteCriterion()
-    df = pl.DataFrame({"it": range(1, 31), "value": [5.0] * 30})
-    sf = SampleFrame(df=df, target_col="value")
-    result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
-    assert result is not None
+    result = criterion.run(
+        samples=sample_frame_constant,
+        params=InputParams(threshold=0.5, confidence_level=0.95),
+    )
+    assert result.error == 0.0
+
+
+def test_clt_run_warmup_warns(sample_df_small: pl.DataFrame) -> None:
+    """Warns when fewer than 30 samples (warm-up) are available."""
+    criterion = CLTAbsoluteCriterion()
+    sf = SampleFrame(df=sample_df_small, target_col="value")
+    with pytest.warns(UserWarning, match="less than the required minimum of 30"):
+        criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
+
+
+def test_clt_run_warmup_not_converged(sample_df_small: pl.DataFrame) -> None:
+    """The warm-up path returns a not-converged result."""
+    criterion = CLTAbsoluteCriterion()
+    sf = SampleFrame(df=sample_df_small, target_col="value")
+    with pytest.warns(UserWarning, match="less than the required minimum of 30"):
+        result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
+    assert result.is_converged is False
+
+
+def test_clt_run_warmup_estimate_none(sample_df_small: pl.DataFrame) -> None:
+    """The warm-up path exposes no estimate."""
+    criterion = CLTAbsoluteCriterion()
+    sf = SampleFrame(df=sample_df_small, target_col="value")
+    with pytest.warns(UserWarning, match="less than the required minimum of 30"):
+        result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
+    assert result.estimate is None
+
+
+def test_clt_run_warmup_empty_data(sample_df_small: pl.DataFrame) -> None:
+    """The warm-up path returns an empty diagnostic frame."""
+    criterion = CLTAbsoluteCriterion()
+    sf = SampleFrame(df=sample_df_small, target_col="value")
+    with pytest.warns(UserWarning, match="less than the required minimum of 30"):
+        result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
+    assert result.data.is_empty()
 
 
 def test_clt_run_large_sample() -> None:
@@ -165,3 +202,51 @@ def test_clt_references_non_empty() -> None:
     """References tuple is populated."""
     criterion = CLTAbsoluteCriterion()
     assert len(criterion.references) > 0
+
+
+def test_clt_grouped_returns_grouped_result(sample_frame_grouped: SampleFrame) -> None:
+    """Grouped input yields a GroupedConvergenceResult."""
+    criterion = CLTAbsoluteCriterion()
+    result = criterion.run(
+        samples=sample_frame_grouped, params=InputParams(threshold=0.5, confidence_level=0.95)
+    )
+    assert isinstance(result, GroupedConvergenceResult)
+
+
+def test_clt_grouped_keys(sample_frame_grouped: SampleFrame) -> None:
+    """Grouped result keys map the group column to its values."""
+    criterion = CLTAbsoluteCriterion()
+    result = criterion.run(
+        samples=sample_frame_grouped, params=InputParams(threshold=0.5, confidence_level=0.95)
+    )
+    assert isinstance(result, dict)
+    assert {dict(key)["group"] for key in result} == {"a", "b"}
+
+
+def test_clt_grouped_per_group_n(sample_frame_grouped: SampleFrame) -> None:
+    """Each group reports its own sample count."""
+    criterion = CLTAbsoluteCriterion()
+    result = criterion.run(
+        samples=sample_frame_grouped, params=InputParams(threshold=0.5, confidence_level=0.95)
+    )
+    assert isinstance(result, dict)
+    assert all(res.n == 40 for res in result.values())
+
+
+def test_clt_grouped_error_by(sample_frame_grouped: SampleFrame) -> None:
+    """error_by keeps the requested group column."""
+    criterion = CLTAbsoluteCriterion()
+    result = criterion.run(
+        samples=sample_frame_grouped, params=InputParams(threshold=0.5, confidence_level=0.95)
+    )
+    assert set(result.error_by(keep="group")) == {(("group", "a"),), (("group", "b"),)}
+
+
+def test_clt_grouped_multi_error_by(sample_frame_grouped_multi: SampleFrame) -> None:
+    """error_by marginalizes over the un-kept group column."""
+    criterion = CLTAbsoluteCriterion()
+    result = criterion.run(
+        samples=sample_frame_grouped_multi,
+        params=InputParams(threshold=0.5, confidence_level=0.95),
+    )
+    assert set(result.error_by(keep=["cat1"])) == {(("cat1", "A"),), (("cat1", "B"),)}

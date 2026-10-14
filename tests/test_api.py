@@ -9,6 +9,7 @@ import pytest
 import mocaco as mcc
 from mocaco import convergence, describe, methods
 from mocaco.protocols import SampleFrame
+from mocaco.result import GroupedConvergenceResult
 
 
 def test_convergence_call_with_method() -> None:
@@ -101,3 +102,22 @@ def test_samples_passes_columns() -> None:
     sf = mcc.samples(df, target_col="value", it_col="it")
     assert sf.it_col == "it"
     assert sf.target_col == "value"
+
+
+def test_samples_passes_group_cols(sample_df_grouped: pl.DataFrame) -> None:
+    """group_cols is forwarded to the SampleFrame."""
+    sf = mcc.samples(sample_df_grouped, target_col="value", group_cols="group")
+    assert sf.group_cols == ["group"]
+
+
+def test_convergence_grouped_returns_grouped_result(sample_frame_grouped: SampleFrame) -> None:
+    """Grouped samples produce a GroupedConvergenceResult."""
+    result = convergence(samples=sample_frame_grouped, method="clt_uni_abs", threshold=0.5)
+    assert isinstance(result, GroupedConvergenceResult)
+
+
+def test_convergence_grouped_execution_time_set(sample_frame_grouped: SampleFrame) -> None:
+    """Execution time is recorded for every group."""
+    result = convergence(samples=sample_frame_grouped, method="clt_uni_abs", threshold=0.5)
+    assert isinstance(result, GroupedConvergenceResult)
+    assert all(res.execution_time_sec is not None for res in result.values())

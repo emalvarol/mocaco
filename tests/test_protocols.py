@@ -101,3 +101,53 @@ def test_sample_frame_filter_cols(sample_df_with_it: pl.DataFrame) -> None:
     assert sf.it_col == "it"
     assert sf.target_col == "value"
     # DataFrame maintains all columns; only it_col and target_col are required
+
+
+def test_sample_frame_group_cols_str_normalized() -> None:
+    """A string group_cols is normalized to a one-element list."""
+    df = pl.DataFrame({"group": ["a"] * 30, "value": [1.0] * 30})
+    sf = SampleFrame(df=df, target_col="value", group_cols="group")
+    assert sf.group_cols == ["group"]
+
+
+def test_sample_frame_group_cols_list_preserved() -> None:
+    """A list of group columns is preserved as a list."""
+    df = pl.DataFrame({"a": ["x"] * 30, "b": ["y"] * 30, "value": [1.0] * 30})
+    sf = SampleFrame(df=df, target_col="value", group_cols=["a", "b"])
+    assert sf.group_cols == ["a", "b"]
+
+
+def test_sample_frame_group_cols_none_becomes_empty() -> None:
+    """None group_cols is normalized to an empty list."""
+    df = pl.DataFrame({"value": [1.0] * 30})
+    sf = SampleFrame(df=df, target_col="value")
+    assert sf.group_cols == []
+
+
+def test_sample_frame_group_cols_auto_it_per_group() -> None:
+    """The auto-created it column restarts at 1 within each group."""
+    df = pl.DataFrame({"group": ["a"] * 5 + ["b"] * 5, "value": [1.0] * 10})
+    sf = SampleFrame(df=df, target_col="value", group_cols="group")
+    assert sf.df["it"].to_list() == [1, 2, 3, 4, 5, 1, 2, 3, 4, 5]
+
+
+def test_sample_frame_group_col_missing_raises() -> None:
+    """ColumnNotFoundError when a group column is absent."""
+    df = pl.DataFrame({"group": ["a"] * 30, "value": [1.0] * 30})
+    with pytest.raises(pl.exceptions.ColumnNotFoundError):
+        SampleFrame(df=df, target_col="value", group_cols="missing")
+
+
+def test_sample_frame_group_col_unsupported_dtype_raises() -> None:
+    """TypeError for an unsupported group column dtype."""
+    df = pl.DataFrame({"group": [[1], [2]] * 5, "value": [1.0] * 10})
+    with pytest.raises(TypeError, match=r"(?i)unsupported"):
+        SampleFrame(df=df, target_col="value", group_cols="group")
+
+
+def test_sample_frame_group_cols_frozen() -> None:
+    """group_cols is immutable after construction."""
+    df = pl.DataFrame({"group": ["a"] * 30, "value": [1.0] * 30})
+    sf = SampleFrame(df=df, target_col="value", group_cols="group")
+    with pytest.raises(AttributeError):
+        sf.group_cols = ["other"]  # type: ignore[misc]

@@ -65,3 +65,19 @@ def test_result_plotting_pipeline() -> None:
     ax = result.plot.evolution(show=False)
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()
+
+
+def test_full_pipeline_grouped(sample_df_grouped: pl.DataFrame) -> None:
+    """Grouped samples flow through convergence into per-group results."""
+    from mocaco.result import GroupedConvergenceResult
+
+    sample_frame = samples(sample_df_grouped, target_col="value", group_cols="group")
+    result = convergence(samples=sample_frame, method="clt_uni_abs", threshold=0.5)
+    assert isinstance(result, GroupedConvergenceResult)
+
+
+def test_full_pipeline_grouped_indexing(sample_df_grouped: pl.DataFrame) -> None:
+    """A specific group can be indexed from the grouped result."""
+    sample_frame = samples(sample_df_grouped, target_col="value", group_cols="group")
+    result = convergence(samples=sample_frame, method="clt_uni_abs", threshold=0.5)
+    assert result[(("group", "a"),)].n == 40

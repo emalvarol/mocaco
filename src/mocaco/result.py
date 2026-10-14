@@ -389,6 +389,11 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
         return sum(res.n for res in self.values())
 
     @property
+    def n_col(self) -> str:
+        """Name of the n column set on the method data output."""
+        return next(iter(self.values())).n_col
+
+    @property
     def error(self) -> float | None:
         """
         Residual absolute sum of the errors across all evaluated groups.
@@ -447,12 +452,22 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
         return {key: (sum(errors) if errors else None) for key, errors in aggregated.items()}
 
     @property
+    def error_col(self) -> str:
+        """Name of the error column set on the method data output."""
+        return next(iter(self.values())).error_col
+
+    @property
     def estimate(self) -> float | None:
         """Raises TypeError. Estimates cannot be generically aggregated across groups."""
         raise TypeError(
             "Cannot access 'estimate' directly on a GroupedConvergenceResult. "
             "You must index a specific group first, for example: result[group_key].estimate"
         )
+
+    @property
+    def estimate_col(self) -> str:
+        """Name of the estimate column set on the method data output."""
+        return next(iter(self.values())).estimate_col
 
     @property
     def diagnostics(self) -> dict[str, Any]:
@@ -466,6 +481,11 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
     def is_converged(self) -> bool:
         """Return True if all groups have converged."""
         return all(res.is_converged for res in self.values())
+
+    @property
+    def is_converged_col(self) -> str:
+        """Name of the is_converged column set on the method data output."""
+        return next(iter(self.values())).is_converged_col
 
     @property
     def data(self) -> pl.DataFrame:
