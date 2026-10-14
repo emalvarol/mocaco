@@ -42,7 +42,7 @@ class Convergence:
             Step interval for periodic evaluation of convergence history natively in Polars.
         """
         ...
-    def clt_uni_abs_old(
+    def clt_uni_rel(
         self,
         samples: SampleFrame,
         *,
@@ -51,12 +51,12 @@ class Convergence:
         eval_frequency: int | None = None,
     ) -> ConvergenceResult | GroupedConvergenceResult:
         """
-        Central Limit Theorem based convergence criterion using an absolute Monte Carlo error threshold.
+        Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
 
         Parameters
         ----------
         threshold : float
-            Maximum accepted absolute Monte Carlo error.
+            Maximum accepted relative Monte Carlo error (proportion of estimate).
         confidence_level : float, default 0.95
             Confidence level used for the CLT margin of error.
         eval_frequency : int | None, default None

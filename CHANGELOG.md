@@ -6,13 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- New convergence method: clt_uni_rlt, clt_multi_rlt (vats_2019)
+- New convergence method: clt_multi_rlt (vats_2019)
 - New tests:
     - Use conftest dataframe for tests/methods/test_clt_uni_abs py::test_clt_run_zero_variance
     - tests analogous to ConvergenceResult for GroupedConvergenceResult
     - warm-up test for clt_uni_abs
     - group_cols tests
     - consider group_cols in benchmarks
+- Plot error_by capacity
+- Improve dic key for results to allow using dics instead of tupples
 
 ## [0.3.0] — 2026-10-15
 ### Added
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code coverage badget
 - Toml classifiers
 - GitHub release in Actions
+- New clt_uni_rel method: Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
 
 ## [0.2.0] — 2026-10-14
 
