@@ -9,7 +9,7 @@
 
 Convergence analysis for Monte Carlo series using Polars DataFrames for fastest Python performance.
 <p align="center">
-  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/Logo_v1.png" alt="mocaco logo" width="400"/>
+  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/mocaco_logo_v2.svg" alt="mocaco logo" width="400"/>
 </p>
 
 The library provides a simple API for applying different convergence and
