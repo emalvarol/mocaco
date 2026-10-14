@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New tests for clt_multi_rlt
 - Plot error_by capacity
 - Improve dic key for results to allow using dics instead of tupples
+    (needs review and improvement)
 
 ## [0.3.0] — 2026-10-15
 ### Added

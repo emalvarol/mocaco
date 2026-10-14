@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 import polars as pl
 from rich.console import Console
@@ -19,35 +20,77 @@ type GroupKey = tuple[tuple[str, Any], ...]
 
 class GroupKeyMapping[V](dict[GroupKey, V]):
     """
-    Mapping keyed by group keys that also accepts ``dict`` selectors on lookup.
+    Mapping keyed by group keys that accepts multiple lookup formats.
 
-    Lookups support both the canonical tuple-of-pairs key and an equivalent
-    ``dict`` selector specifying exactly the group columns (order does not
-    matter)::
-
-        mapping[(("group", "group_a"),)]  # canonical key
-        mapping[{"group": "group_a"}]  # dict selector
+    Lookups support:
+      1. Canonical tuple-of-pairs key: mapping[(("group", "group_a"),)]
+      2. Dict selector (order-independent): mapping[{"group": "group_a"}]
+      3. Scalar or Tuple of values (positional): mapping["group_a"] or mapping["A", "B"]
     """
 
-    def __getitem__(self, key: GroupKey | dict[str, Any]) -> V:
-        """Return the value for a canonical key or a dict selector."""
-        if isinstance(key, dict):
-            key = self._resolve_dict_key(key)
-        return super().__getitem__(key)
+    @overload
+    def __getitem__(self, key: GroupKey) -> V: ...
 
-    def _resolve_dict_key(self, selector: dict[str, Any]) -> GroupKey:
-        """Translate a dict selector into the canonical tuple-of-pairs group key."""
+    @overload
+    def __getitem__(self, key: Mapping[str, Any]) -> V: ...
+
+    @overload
+    def __getitem__(self, key: tuple[Any, ...]) -> V: ...
+
+    @overload
+    def __getitem__(self, key: str | int | float) -> V: ...
+
+    def __getitem__(self, key: Any) -> V:
+        """Return the value for a canonical key, dict selector, or value tuple."""
+        # 1. Dictionary / Mapping selector (checked first because dicts are unhashable)
+        if isinstance(key, Mapping):
+            resolved_key = self._resolve_dict_key(key)
+            return super().__getitem__(resolved_key)
+
+        # 2. Direct match (Canonical GroupKey)
+        try:
+            if key in self:
+                return super().__getitem__(key)
+        except TypeError:
+            pass
+
+        # 3. Scalar or Value Tuple selector
+        resolved_key = self._resolve_value_key(key)
+        return super().__getitem__(resolved_key)
+
+    @property
+    def _group_columns(self) -> tuple[str, ...]:
+        """Extract the ordered list of group column names from the mapping keys."""
         if not self:
             raise KeyError("No groups available.")
-        columns = [col for col, _ in next(iter(self))]
+        return tuple(col for col, _ in next(iter(self)))
+
+    def _resolve_dict_key(self, selector: Mapping[str, Any]) -> GroupKey:
+        """Translate a dict selector into the canonical tuple-of-pairs group key."""
+        columns = self._group_columns
         missing = [col for col in columns if col not in selector]
         extra = [col for col in selector if col not in columns]
         if missing or extra:
             raise ValueError(
-                f"Group selector must specify exactly the group columns {columns}; "
+                f"Group selector must specify exactly the group columns {list(columns)}; "
                 f"got {sorted(selector)} (missing={missing}, unknown={extra})."
             )
         return tuple((col, selector[col]) for col in columns)
+
+    def _resolve_value_key(self, key: Any) -> GroupKey:
+        """Translate a scalar or value tuple into the canonical tuple-of-pairs group key."""
+        columns = self._group_columns
+
+        # If it's a single scalar value, wrap it in a tuple
+        if not isinstance(key, tuple):
+            key = (key,)
+
+        if len(key) != len(columns):
+            raise ValueError(
+                f"Expected {len(columns)} value(s) for group columns {list(columns)}; "
+                f"got {len(key)} value(s) ({key})."
+            )
+        return tuple((col, val) for col, val in zip(columns, key, strict=True))
 
 
 class ResultPlotter:
@@ -152,95 +195,6 @@ class ResultPlotter:
             plt.close(fig)
 
         return ax
-
-    """
-    def evolution_old(
-        self,
-        *,
-        show: bool = False,
-    ) -> Any:
-        ""
-        Plot the evolution of the estimate, the error band, and the convergence point.
-
-        Requires `matplotlib` to be installed.
-
-        Parameters
-        ----------
-        show
-            If True, automatically displays the plot with `plt.show()` and cleans up resources.
-
-        Returns
-        -------
-        matplotlib.axes.Axes
-            The matplotlib Axes object containing the plot.
-        ""
-        try:
-            import matplotlib.pyplot as plt
-        except ImportError as exc:
-            raise ImportError(
-                "Plotting requires matplotlib. Install it via 'uv pip install mocaco[plot]'."
-            ) from exc
-
-        df = self.result.data
-
-        # Ensure required columns exist
-        missing = [
-            col
-            for col in (
-                self.result.estimate_col,
-                self.result.error_col,
-                self.result.n_col,
-                self.result.is_converged_col,
-            )
-            if col not in self.result.data.columns
-        ]
-        if missing:
-            raise ValueError(f"Columns not found in diagnostic data for plotting: {missing}")
-
-        # Extract arrays
-        n_vals = df.get_column(self.result.n_col).to_numpy()
-        estimate_vals = df.get_column(self.result.estimate_col).to_numpy()
-        error_vals = df.get_column(self.result.error_col).to_numpy()
-
-        fig, ax = plt.subplots(figsize=(8, 5))
-
-        # Plot estimate line
-        ax.plot(n_vals, estimate_vals, label="Estimate", color="#1f77b4", linewidth=2)
-
-        # Plot error band
-        ax.fill_between(
-            n_vals,
-            estimate_vals - error_vals,
-            estimate_vals + error_vals,
-            color="#1f77b4",
-            alpha=0.2,
-            label="Error Band",
-        )
-
-        # Plot vertical line for convergence (first True occurrence)
-        converged_df = df.filter(pl.col(self.result.is_converged_col))
-        if not converged_df.is_empty():
-            first_converged_n = converged_df.get_column(self.result.n_col)[0]
-            ax.axvline(
-                x=first_converged_n,
-                color="red",
-                linestyle="--",
-                label=f"Converged at n={first_converged_n}",
-            )
-
-        ax.set_xlabel("Number of samples (n)")
-        ax.set_ylabel("Estimate")
-        ax.set_title(f"Convergence Evolution ({self.result.method})")
-        ax.legend()
-        ax.grid(True, linestyle=":", alpha=0.7)
-
-        if show:
-            plt.show()
-            plt.close(fig)
-
-        return ax
-    """
-
 
 @dataclass(frozen=True)
 class ConvergenceResult:
@@ -371,14 +325,14 @@ class ConvergenceResult:
         return (
             f"ConvergenceResult("
             f"method={self.method!r}, "
-            f"n={self.n!r}"
+            f"n={self.n!r}, "
             f"estimate={self.estimate!r}, "
             f"error={self.error!r}, "
             f"is_converged={self.is_converged!r}, "
             f")"
         )
 
-    def error_by(self, *, keep: str | list[str]) -> dict[GroupKey, float | None]:
+    def error_by(self, *, keep: str | list[str]) -> GroupKeyMapping[float | None]:
         """
         Return residual absolute error aggregated over group columns not in `keep`.
 
@@ -392,7 +346,7 @@ class ConvergenceResult:
 
         Returns
         -------
-        dict[GroupKey, float | None]
+        GroupKeyMapping[float | None]
             Mapping from the kept group key to its aggregated absolute error.
 
         Raises
@@ -413,14 +367,11 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
 
     Inherits from dict while exposing combined result properties and metrics.
 
-    Individual groups can be selected either with the canonical tuple-of-pairs
-    key or with an equivalent ``dict`` selector::
+    Individual groups can be selected in three intuitive ways:
 
-        result[(("group", "group_a"),)]  # canonical key
-        result[{"group": "group_a"}]  # dict selector
-
-    A dict selector must specify exactly the group columns (order does not
-    matter); it is translated into the canonical key before lookup.
+        result["group_a"]                   # 1. Scalar/Tuple value lookup
+        result[{"group": "group_a"}]        # 2. Dict selector
+        result[(("group", "group_a"),)]     # 3. Canonical key
     """
 
     @property
@@ -468,17 +419,18 @@ class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
         GroupKeyMapping[float | None]
             Mapping from the kept group key to its aggregated absolute error. A key
             maps to None when none of its collapsed groups expose an error. Entries
-            can be looked up with the canonical tuple-of-pairs key or a ``dict``
-            selector over the kept columns.
+            can be looked up seamlessly:
 
         Examples
         --------
-        With ``group_cols=["cat1", "cat2"]``::
+        With ``group_cols=["cat1", "cat2"]``:
 
             errors = result.error_by(keep=["cat1"])
-            # { (("cat1", "A"),): 0.12, (("cat1", "B"),): 0.09 }
-            errors[(("cat1", "A"),)]
+
+            # All three lookups evaluate without Pylance warnings:
+            errors["A"]
             errors[{"cat1": "A"}]
+            errors[(("cat1", "A"),)]
         """
         keep_cols = [keep] if isinstance(keep, str) else list(keep)
         available = {col for group_key in self for col, _ in group_key}

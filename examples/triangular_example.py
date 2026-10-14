@@ -78,11 +78,12 @@ with pl.Config(tbl_rows=-1):
     # Individual
     print(result[(("group", "group_a"),)].n)
     print(result[{"group": "group_a"}].n)
-    print(result[(("group", "group_a"),)].error)
-    print(result[(("group", "group_a"),)].estimate)
-    print(result[(("group", "group_a"),)].execution_time_sec)
-    print(result[(("group", "group_a"),)].data)
-    print(result[(("group", "group_a"),)].summary())
+    print(result["group_a"].n)
+    print(result["group_a"].error)
+    print(result["group_a"].estimate)
+    print(result["group_a"].execution_time_sec)
+    print(result["group_a"].data)
+    print(result["group_a"].summary())
 
 ax = result.plot.evolution(show=True)
 ax = result[(("group", "group_a"),)].plot.evolution(show=True)
