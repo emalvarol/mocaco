@@ -19,17 +19,19 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def check_orphan_method_docs(docs_dir: Path) -> list[str]:
-    """Detect .md files in docs_dir that do not correspond to a registered method."""
+def remove_orphan_method_docs(docs_dir: Path) -> list[str]:
+    """Delete .md files in docs_dir that do not correspond to a registered method."""
     registered = set(registry.names())
-    orphans = []
+    removed = []
     if docs_dir.exists():
         for md_file in docs_dir.glob("*.md"):
             if md_file.stem == "index":
                 continue
             if md_file.stem not in registered:
-                orphans.append(str(md_file))
-    return orphans
+                md_file.unlink()
+                removed.append(str(md_file))
+                print(f"Removed orphan doc: {md_file}")
+    return removed
 
 
 def check_mkdocs_nav(docs_root: Path) -> list[str]:
@@ -47,13 +49,13 @@ def check_mkdocs_nav(docs_root: Path) -> list[str]:
             if isinstance(entry, dict):
                 for _label, value in entry.items():
                     if isinstance(value, str) and value.endswith(".md"):
-                        target = docs_root.parent / value
+                        target = docs_root / value
                         if not target.exists():
                             broken.append(value)
                     elif isinstance(value, list):
                         _walk(value)
             elif isinstance(entry, str) and entry.endswith(".md"):
-                target = docs_root.parent / entry
+                target = docs_root / entry
                 if not target.exists():
                     broken.append(entry)
 
@@ -150,6 +152,52 @@ def generate_method_docs(docs_dir: Path):
         print(f"Generated {output_path}")
 
 
+def sync_mkdocs_nav(docs_root: Path) -> None:
+    """Add/remove method entries in the mkdocs.yml Methods nav section."""
+    mkdocs_path = docs_root.parent / "mkdocs.yml"
+    if not mkdocs_path.exists():
+        print(f"Warning: {mkdocs_path} not found. Skipping nav sync.")
+        return
+
+    methods = registry.names()
+    lines = mkdocs_path.read_text(encoding="utf-8").splitlines()
+
+    methods_idx = None
+    methods_indent = 0
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == "- Methods:" or stripped.startswith("- Methods:"):
+            methods_indent = len(line) - len(line.lstrip())
+            methods_idx = index
+            break
+
+    if methods_idx is None:
+        print("Warning: no 'Methods' entry found in mkdocs.yml nav. Skipping nav sync.")
+        return
+
+    block_end = methods_idx + 1
+    child_indent = methods_indent + 4
+    saw_child = False
+    while block_end < len(lines):
+        stripped = lines[block_end].strip()
+        if not stripped:
+            break
+        indent = len(lines[block_end]) - len(lines[block_end].lstrip())
+        if indent <= methods_indent:
+            break
+        if not saw_child:
+            child_indent = indent
+            saw_child = True
+        block_end += 1
+
+    lines[methods_idx] = " " * methods_indent + "- Methods:"
+    new_children = [" " * child_indent + f"- {name}: methods/{name}.md" for name in methods]
+    lines[methods_idx + 1 : block_end] = new_children
+
+    mkdocs_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Synced Methods nav in {mkdocs_path} ({len(methods)} methods)")
+
+
 def copy_readme_as_home(docs_root: Path) -> None:
     """Copy README.md into the docs root as the mkdocs main page."""
     readme_source = docs_root.parent / "README.md"
@@ -173,26 +221,24 @@ def main():
 
     config = load_config(args.config)
     docs_dir = Path(config["docs"]["output_dir"])
-
-    errors: list[str] = []
-
-    orphans = check_orphan_method_docs(docs_dir)
-    for orphan in orphans:
-        errors.append(f"Orphan doc file: {orphan} (no registered method with that name)")
-
-    broken_nav = check_mkdocs_nav(docs_dir)
-    for ref in broken_nav:
-        errors.append(f"Broken mkdocs.yml nav reference: {ref} (file does not exist)")
-
-    if errors:
-        for err in errors:
-            print(f"ERROR: {err}", file=sys.stderr)
-        sys.exit(1)
-
     docs_root = docs_dir.parent
+
+    remove_orphan_method_docs(docs_dir)
+
     copy_readme_as_home(docs_root)
 
     generate_method_docs(docs_dir)
+
+    sync_mkdocs_nav(docs_root)
+
+    broken_nav = check_mkdocs_nav(docs_root)
+    if broken_nav:
+        for ref in broken_nav:
+            print(
+                f"ERROR: Broken mkdocs.yml nav reference: {ref} (file does not exist)",
+                file=sys.stderr,
+            )
+        sys.exit(1)
 
     format_docs_dir_with_ruff(docs_dir)
 

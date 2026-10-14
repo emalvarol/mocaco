@@ -86,7 +86,7 @@ docstring-code-format = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers --cov=mocaco --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
 source = ["mocaco"]

@@ -3,7 +3,7 @@
 [![CI/CD & Tests](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
 ![PyPi Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
-[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/monaco)
+[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/mocaco)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
 

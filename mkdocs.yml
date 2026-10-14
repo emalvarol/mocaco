@@ -25,6 +25,7 @@ nav:
       - Noise vs Smooth Convergence: tutorials/noise-vs-smooth.md
   - Methods:
       - clt_uni_abs: methods/clt_uni_abs.md
+      - clt_uni_rel: methods/clt_uni_rel.md
   - Constitution: constitution.md
 
 markdown_extensions:

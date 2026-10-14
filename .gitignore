@@ -1,10 +1,27 @@
+# Virtual Environments
 .venv/
-__pycache__/
-*.pyc
-*.pyo
+
+# Caches
+.mypy_cache/
 .pytest_cache/
+.ruff_cache/
+__pycache__/
+
+# Testing & Coverage
 .coverage
+coverage.xml
+.benchmarks/
 htmlcov/
+
+# Build & Documentation Artifacts
+site/
 dist/
 build/
 *.egg-info/
+__pycache__/
+*.py[cod]
+
+# Local 
+local/
+
+
