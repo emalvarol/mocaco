@@ -2,3 +2,7 @@
 # https://github.com/github-linguist/linguist/blob/main/docs/overrides.md
 docs/* linguist-vendored
 docs/* linguist-documentation
+
+# Ignore all HTML and JS files for repository language statistics
+*.html linguist-vendored
+*.js linguist-vendored

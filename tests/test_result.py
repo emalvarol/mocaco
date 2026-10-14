@@ -392,6 +392,66 @@ def test_grouped_result_len(grouped_result: GroupedConvergenceResult) -> None:
     assert len(grouped_result) == 2
 
 
+def test_grouped_result_getitem_dict_single_col(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """A dict selector picks the matching group."""
+    assert grouped_result[{"group": "a"}].n == 40
+
+
+def test_grouped_result_getitem_dict_matches_tuple_key(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """A dict selector is equivalent to the canonical tuple-of-pairs key."""
+    assert grouped_result[{"group": "b"}] is grouped_result[(("group", "b"),)]
+
+
+def test_grouped_result_getitem_dict_multi_col_order_independent(
+    make_convergence_result,
+) -> None:
+    """A multi-column dict selector is order independent."""
+    result = GroupedConvergenceResult(
+        {
+            (("cat1", "A"), ("cat2", "X")): make_convergence_result(n=10),
+            (("cat1", "A"), ("cat2", "Y")): make_convergence_result(n=20),
+            (("cat1", "B"), ("cat2", "X")): make_convergence_result(n=30),
+            (("cat1", "B"), ("cat2", "Y")): make_convergence_result(n=40),
+        }
+    )
+    assert result[{"cat2": "Y", "cat1": "B"}].n == 40
+
+
+def test_grouped_result_getitem_dict_missing_col_raises(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """A dict selector missing a group column raises ValueError."""
+    with pytest.raises(ValueError, match=r"(?i)exactly the group columns"):
+        grouped_result[{}]
+
+
+def test_grouped_result_getitem_dict_unknown_col_raises(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """A dict selector with an unknown column raises ValueError."""
+    with pytest.raises(ValueError, match=r"(?i)exactly the group columns"):
+        grouped_result[{"group": "a", "extra": "x"}]
+
+
+def test_grouped_result_getitem_dict_unknown_value_raises(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """A dict selector with an unknown value raises KeyError."""
+    with pytest.raises(KeyError):
+        grouped_result[{"group": "z"}]
+
+
+def test_grouped_result_getitem_tuple_still_works(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """The canonical tuple-of-pairs key still works."""
+    assert grouped_result[(("group", "a"),)].n == 40
+
+
 def test_grouped_result_n_sum(grouped_result: GroupedConvergenceResult) -> None:
     """N aggregates the sample counts of every group."""
     assert grouped_result.n == 100
@@ -429,6 +489,25 @@ def test_grouped_result_error_by_list(grouped_result: GroupedConvergenceResult) 
         (("group", "a"),),
         (("group", "b"),),
     }
+
+
+def test_grouped_result_error_by_dict_selector(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """error_by results can be looked up with a dict selector."""
+    errors = grouped_result.error_by(keep=["group"])
+    assert errors[{"group": "a"}] == pytest.approx(0.1)
+    assert errors[{"group": "b"}] == pytest.approx(0.2)
+    assert errors[{"group": "a"}] == errors[(("group", "a"),)]
+
+
+def test_grouped_result_error_by_dict_selector_unknown_raises(
+    grouped_result: GroupedConvergenceResult,
+) -> None:
+    """An unknown dict selector value on error_by results raises KeyError."""
+    errors = grouped_result.error_by(keep=["group"])
+    with pytest.raises(KeyError):
+        errors[{"group": "z"}]
 
 
 def test_grouped_result_error_by_unknown_raises(

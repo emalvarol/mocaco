@@ -279,6 +279,25 @@ class ConvergenceResult:
 | `error` | Property. Residual absolute sum of the errors across all groups. |
 | `error_by(keep=...)` | Return a mapping from the kept group key to its residual absolute error, aggregating (marginalizing) over every group column not listed in `keep`. |
 
+Individual groups can be selected either with the canonical tuple-of-pairs key or
+with an equivalent `dict` selector. The dict selector must specify exactly the group
+columns, in any order; it is translated into the canonical key before lookup.
+
+```python
+result[(("group", "group_a"),)]  # canonical key
+result[{"group": "group_a"}]  # dict selector
+result[{"cat2": "Y", "cat1": "B"}]  # multi-column, order independent
+```
+
+The mapping returned by `error_by(keep=...)` supports the same two lookup forms,
+restricted to the kept group columns:
+
+```python
+errors = result.error_by(keep=["cat1"])
+errors[(("cat1", "A"),)]
+errors[{"cat1": "A"}]
+```
+
 ### 7.2 ResultPlotter
 
 `ResultPlotter` provides plotting capabilities:

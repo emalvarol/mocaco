@@ -77,6 +77,7 @@ with pl.Config(tbl_rows=-1):
     print(result.summary())
     # Individual
     print(result[(("group", "group_a"),)].n)
+    print(result[{"group": "group_a"}].n)
     print(result[(("group", "group_a"),)].error)
     print(result[(("group", "group_a"),)].estimate)
     print(result[(("group", "group_a"),)].execution_time_sec)
@@ -122,12 +123,14 @@ with pl.Config(tbl_rows=-1):
     print(result.error)
     print(result.error_by(keep=["cat1"]))
     print(result.error_by(keep=["cat1"])[("cat1", "A"),])
+    print(result.error_by(keep=["cat1"])[{"cat1": "A"}])
     print(result.estimate)
     print(result.data)
     print(result.execution_time_sec)
     print(result.summary())
     # Individual
     print(result[(("cat1", "A"), ("cat2", "X"))].n)
+    print(result[{"cat1": "A", "cat2": "X"}].n)
     print(result[(("cat1", "A"), ("cat2", "X"))].error)
     print(result[(("cat1", "A"), ("cat2", "Y"))].error)
     print(result[(("cat1", "A"), ("cat2", "X"))].estimate)

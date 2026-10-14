@@ -3,7 +3,7 @@
 [![CI/CD & Tests](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
 ![PyPi Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
-[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/mocaco)
+[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg)](https://codecov.io/gh/emalvarol/mocaco)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
 
@@ -12,7 +12,7 @@
 </p>
 
 Convergence analysis for Monte Carlo series using Polars DataFrames for fastest Python performance.
-The library provides a simple API for applying different convergence and stopping criteria to Monte Carlo simulation results.
+The library provides a simple API for applying different convergence and stopping criteria to Monte Carlo simulation results as well as a simple contribution approach (only one .py needed to add a new convergence criterion).
 
 ## Quickstart
 

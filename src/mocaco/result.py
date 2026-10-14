@@ -14,6 +14,42 @@ if TYPE_CHECKING:
     import pandas as pd
 
 
+type GroupKey = tuple[tuple[str, Any], ...]
+
+
+class GroupKeyMapping[V](dict[GroupKey, V]):
+    """
+    Mapping keyed by group keys that also accepts ``dict`` selectors on lookup.
+
+    Lookups support both the canonical tuple-of-pairs key and an equivalent
+    ``dict`` selector specifying exactly the group columns (order does not
+    matter)::
+
+        mapping[(("group", "group_a"),)]  # canonical key
+        mapping[{"group": "group_a"}]  # dict selector
+    """
+
+    def __getitem__(self, key: GroupKey | dict[str, Any]) -> V:
+        """Return the value for a canonical key or a dict selector."""
+        if isinstance(key, dict):
+            key = self._resolve_dict_key(key)
+        return super().__getitem__(key)
+
+    def _resolve_dict_key(self, selector: dict[str, Any]) -> GroupKey:
+        """Translate a dict selector into the canonical tuple-of-pairs group key."""
+        if not self:
+            raise KeyError("No groups available.")
+        columns = [col for col, _ in next(iter(self))]
+        missing = [col for col in columns if col not in selector]
+        extra = [col for col in selector if col not in columns]
+        if missing or extra:
+            raise ValueError(
+                f"Group selector must specify exactly the group columns {columns}; "
+                f"got {sorted(selector)} (missing={missing}, unknown={extra})."
+            )
+        return tuple((col, selector[col]) for col in columns)
+
+
 class ResultPlotter:
     """Helper class to provide plotting capabilities for ConvergenceResult and GroupedConvergenceResult."""
 
@@ -342,7 +378,7 @@ class ConvergenceResult:
             f")"
         )
 
-    def error_by(self, *, keep: str | list[str]) -> dict[tuple[tuple[str, Any], ...], float | None]:
+    def error_by(self, *, keep: str | list[str]) -> dict[GroupKey, float | None]:
         """
         Return residual absolute error aggregated over group columns not in `keep`.
 
@@ -356,7 +392,7 @@ class ConvergenceResult:
 
         Returns
         -------
-        dict[tuple[tuple[str, Any], ...], float | None]
+        dict[GroupKey, float | None]
             Mapping from the kept group key to its aggregated absolute error.
 
         Raises
@@ -371,11 +407,20 @@ class ConvergenceResult:
         )
 
 
-class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResult]):
+class GroupedConvergenceResult(GroupKeyMapping[ConvergenceResult]):
     """
     Collection of ConvergenceResults mapped by group keys.
 
     Inherits from dict while exposing combined result properties and metrics.
+
+    Individual groups can be selected either with the canonical tuple-of-pairs
+    key or with an equivalent ``dict`` selector::
+
+        result[(("group", "group_a"),)]  # canonical key
+        result[{"group": "group_a"}]  # dict selector
+
+    A dict selector must specify exactly the group columns (order does not
+    matter); it is translated into the canonical key before lookup.
     """
 
     @property
@@ -403,7 +448,7 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
         errors = [abs(res.error) for res in self.values() if res.error is not None]
         return sum(errors) if errors else None
 
-    def error_by(self, *, keep: str | list[str]) -> dict[tuple[tuple[str, Any], ...], float | None]:
+    def error_by(self, *, keep: str | list[str]) -> GroupKeyMapping[float | None]:
         """
         Aggregate the residual absolute error over a subset of the grouping dimensions.
 
@@ -420,16 +465,20 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
 
         Returns
         -------
-        dict[dict[tuple[tuple[str, Any], ...], float | None]
+        GroupKeyMapping[float | None]
             Mapping from the kept group key to its aggregated absolute error. A key
-            maps to None when none of its collapsed groups expose an error.
+            maps to None when none of its collapsed groups expose an error. Entries
+            can be looked up with the canonical tuple-of-pairs key or a ``dict``
+            selector over the kept columns.
 
         Examples
         --------
         With ``group_cols=["cat1", "cat2"]``::
 
-            result.error_by(keep=["cat1"])
+            errors = result.error_by(keep=["cat1"])
             # { (("cat1", "A"),): 0.12, (("cat1", "B"),): 0.09 }
+            errors[(("cat1", "A"),)]
+            errors[{"cat1": "A"}]
         """
         keep_cols = [keep] if isinstance(keep, str) else list(keep)
         available = {col for group_key in self for col, _ in group_key}
@@ -440,16 +489,16 @@ class GroupedConvergenceResult(dict[tuple[tuple[str, Any], ...], ConvergenceResu
                 f"Available group columns: {sorted(available)}."
             )
 
-        aggregated: dict[tuple[tuple[str, Any], ...], list[float]] = {}
+        aggregated: dict[GroupKey, list[float]] = {}
         for group_key, res in self.items():
-            sub_key: tuple[tuple[str, Any], ...] = tuple(
-                (col, value) for col, value in group_key if col in keep_cols
-            )
+            sub_key: GroupKey = tuple((col, value) for col, value in group_key if col in keep_cols)
             bucket = aggregated.setdefault(sub_key, [])
             if res.error is not None:
                 bucket.append(abs(res.error))
 
-        return {key: (sum(errors) if errors else None) for key, errors in aggregated.items()}
+        return GroupKeyMapping(
+            {key: (sum(errors) if errors else None) for key, errors in aggregated.items()}
+        )
 
     @property
     def error_col(self) -> str:
