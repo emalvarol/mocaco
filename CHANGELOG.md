@@ -7,12 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - New convergence method: clt_multi_rlt (vats_2019)
-- New tests:
-    - Use conftest dataframe for tests/methods/test_clt_uni_abs py::test_clt_run_zero_variance
-    - tests analogous to ConvergenceResult for GroupedConvergenceResult
-    - warm-up test for clt_uni_abs
-    - group_cols tests
-    - consider group_cols in benchmarks
+- New tests for clt_multi_rlt
 - Plot error_by capacity
 - Improve dic key for results to allow using dics instead of tupples
 
@@ -23,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toml classifiers
 - GitHub release in Actions
 - New clt_uni_rel method: Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
+- Tests to cover new method, GroupedConvergenceResult and group_cols
 
 ## [0.2.0] — 2026-10-14
 
