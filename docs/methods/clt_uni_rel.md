@@ -1,0 +1,45 @@
+# clt_uni_rel
+
+Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `threshold` | `float` | *required* | Maximum accepted relative Monte Carlo error (proportion of estimate). |
+| `confidence_level` | `float` | `0.95` | Confidence level used for the CLT margin of error. |
+| `eval_frequency` | `int | None` | `None` | Step interval for periodic evaluation of convergence history natively in Polars. |
+
+## Assumptions
+
+- Samples are independent and identically distributed (i.i.d.).
+- The target quantity has finite variance.
+- The sample size is sufficiently large (>30) for the CLT to provide a normal approximation.
+
+## Limitations
+
+- This is a probabilistic stopping criterion, not a proof of convergence.
+- For small sample sizes, the normal approximation may be inaccurate.
+- Does not detect systematic bias or non-stationarity in the sampling process.
+- The stability window introduces a lag in detecting convergence.
+- When the estimated value is near zero, the criterion falls back to an absolute error check.
+
+## Result Interpretation
+
+is_converged is True when the CLT-based relative error has stayed below the threshold for at least stb_window consecutive iterations. estimate is the cumulative mean at the final sample. error is the CLT-based relative error (z_score * SEM / |estimate|) at the final sample. n is the total number of samples evaluated.
+
+## Example Usage
+
+```python
+import polars as pl
+import mocaco as mcc
+
+df = pl.DataFrame({"it": range(100), "value": [1.0] * 100})
+samples = mcc.samples(df, it_col="it", target_col="value")
+result = mcc.convergence.clt_uni_rel(samples, threshold=0.05)
+print(result.is_converged)
+```
+
+## References
+
+- https://en.wikipedia.org/wiki/Central_limit_theorem
