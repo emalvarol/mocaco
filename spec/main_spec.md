@@ -254,6 +254,9 @@ class ConvergenceResult:
     # Built by Wrapper or by the criterion default
     data: pl.DataFrame
 
+    # Residual error remaining above the stopping threshold: max(0, |error| - threshold)
+    residual_error: float | None = None
+
     # Performance
     execution_time_sec: float | None = None
 
@@ -278,6 +281,8 @@ class ConvergenceResult:
 |--------|-------------|
 | `error` | Property. Residual absolute sum of the errors across all groups. |
 | `error_by(keep=...)` | Return a mapping from the kept group key to its residual absolute error, aggregating (marginalizing) over every group column not listed in `keep`. |
+| `residual_error_by(keep=...)` | Return a mapping from the kept group key to its aggregated residual error, `residual_error = max(0, \|error\| - threshold)`, marginalizing over every group column not listed in `keep`. The sum reaches `0.0` when every collapsed group has converged. |
+| `data_residual_error_by(keep=...)` | Return a Polars DataFrame with the evolution of the aggregated residual error: the kept group columns, `n`, the aggregated value columns (`agg_<column>`, unweighted mean), `res_error`, and `is_converged` (True when `res_error == 0`). Collapsed groups must share the same `n` sequence. |
 
 Individual groups can be selected either with the canonical tuple-of-pairs key or
 with an equivalent `dict` selector. The dict selector must specify exactly the group

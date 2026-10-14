@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New convergence method: clt_multi_rlt (vats_2019)
 - New tests for clt_multi_rlt
 - Plot error_by capacity
-- Improve dic key for results to allow using dics instead of tupples
-    (needs review and improvement)
+- Added `residual_error` field on `ConvergenceResult` (`max(0, |error| - threshold)`), populated by `clt_uni_abs` and `clt_uni_rel`
+- Added `GroupedConvergenceResult.residual_error_by(keep=...)` to aggregate residual errors over grouping dimensions
+- Added `GroupedConvergenceResult.data_residual_error_by(keep=...)` returning the evolution of the aggregated residual error with `agg_<column>`, `res_error` and `is_converged` columns
 
 ## [0.3.0] — 2026-10-15
 ### Added
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub release in Actions
 - New clt_uni_rel method: Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
 - Tests to cover new method, GroupedConvergenceResult and group_cols
+- Added str, list and dic selector for GroupedConvergenceResult instead of the tuple key verbosity
 
 ## [0.2.0] — 2026-10-14
 

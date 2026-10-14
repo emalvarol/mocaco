@@ -160,17 +160,20 @@ print(result.is_converged)"""
                     }
                 )
 
+                final_error = float(rel_error) if rel_error is not None else float(abs_error)
+
                 return ConvergenceResult(
                     method=self.name,
                     n=int(n),
                     n_col="n",
                     estimate=float(mean) if mean is not None else None,
                     estimate_col="mean",
-                    error=float(rel_error) if rel_error is not None else float(abs_error),
+                    error=final_error,
                     error_col="rel_error",
                     is_converged=is_converged,
                     is_converged_col="is_converged",
                     data=final_df,
+                    residual_error=max(0.0, final_error - params.threshold),
                     diagnostics={
                         "threshold": params.threshold,
                         "confidence_level": params.confidence_level,
@@ -230,6 +233,7 @@ print(result.is_converged)"""
                 is_converged=is_conv_val,
                 is_converged_col="is_converged",
                 data=eval_df,
+                residual_error=max(0.0, error_val - params.threshold),
                 diagnostics={
                     "threshold": params.threshold,
                     "confidence_level": params.confidence_level,

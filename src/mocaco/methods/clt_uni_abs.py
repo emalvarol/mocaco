@@ -161,6 +161,7 @@ print(result.is_converged)"""
                     is_converged=is_converged,
                     is_converged_col="is_converged",
                     data=final_df,
+                    residual_error=max(0.0, abs_error - params.threshold),
                     diagnostics={
                         "threshold": params.threshold,
                         "confidence_level": params.confidence_level,
@@ -211,6 +212,7 @@ print(result.is_converged)"""
                 is_converged=is_conv_val,
                 is_converged_col="is_converged",
                 data=eval_df,
+                residual_error=max(0.0, error_val - params.threshold),
                 diagnostics={
                     "threshold": params.threshold,
                     "confidence_level": params.confidence_level,

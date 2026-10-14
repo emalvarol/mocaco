@@ -91,15 +91,15 @@ ax = result[(("group", "group_a"),)].plot.evolution(show=True)
 # 2
 df_multi = pl.DataFrame(
     {
-        "cat1": ["A"] * 80 + ["B"] * 80,
-        "cat2": (["X"] * 40 + ["Y"] * 40) * 2,
-        "it": list(range(40)) * 4,
+        "cat1": ["A"] * 80 * 40 + ["B"] * 80 * 40,
+        "cat2": (["X"] * 40 + ["Y"] * 40) * 2 * 40,
+        "it": list(range(40)) * 4 * 40,
         "value": np.concatenate(
             [
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=SEED),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 1)),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 2)),
-                triang.rvs(c=0.5, loc=0, scale=10, size=40, random_state=(SEED + 3)),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40 * 40, random_state=SEED),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40 * 40, random_state=(SEED + 1)),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40 * 40, random_state=(SEED + 2)),
+                triang.rvs(c=0.5, loc=0, scale=10, size=40 * 40, random_state=(SEED + 3)),
             ]
         ),
     }
@@ -125,8 +125,10 @@ with pl.Config(tbl_rows=-1):
     print(result.error_by(keep=["cat1"]))
     print(result.error_by(keep=["cat1"])[("cat1", "A"),])
     print(result.error_by(keep=["cat1"])[{"cat1": "A"}])
+    print(result.residual_error_by(keep=["cat1"]))
     print(result.estimate)
     print(result.data)
+    print(result.data_residual_error_by(keep=["cat1"]))
     print(result.execution_time_sec)
     print(result.summary())
     # Individual
