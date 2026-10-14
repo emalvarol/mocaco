@@ -1,19 +1,18 @@
 # mocaco
 
 [![CI/CD & Tests](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
-![Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
-![PyPI](https://img.shields.io/pypi/v/mocaco?label=pypi)
+![PyPi Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
 [![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/monaco)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
-Convergence analysis for Monte Carlo series using Polars DataFrames for fastest Python performance.
+
 <p align="center">
-  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/mocaco_logo_v2.svg" alt="mocaco logo" width="400"/>
+  <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/mocaco_logo_v2.svg" alt="mocaco logo" width="200"/>
 </p>
 
-The library provides a simple API for applying different convergence and
-stopping criteria to Monte Carlo simulation results.
+Convergence analysis for Monte Carlo series using Polars DataFrames for fastest Python performance.
+The library provides a simple API for applying different convergence and stopping criteria to Monte Carlo simulation results.
 
 ## Quickstart
 

@@ -13,33 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - warm-up test for clt_uni_abs
     - group_cols tests
     - consider group_cols in benchmarks
-- Add Info for pipy:
-    "
-    Classifiers
-    Development Status
-    3 - Alpha
-    Intended Audience
-    Developers
-    Science/Research
-    Operating System
-    OS Independent
-    Programming Language
-    Python :: 3
-    Python :: 3 :: Only
-    Python :: 3.10
-    Python :: 3.11
-    Python :: 3.12
-    Python :: 3.13
-    Python :: 3.14
-    Topic
-    Scientific/Engineering
-    Software Development
-    "
 
-## [0.3.0] — 2026-10-14
+## [0.3.0] — 2026-10-15
 ### Added
 - Improved logo
-- Add code coverage badget
+- Code coverage badget
+- Toml classifiers
 
 ## [0.2.0] — 2026-10-14
 
