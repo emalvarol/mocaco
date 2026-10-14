@@ -1,13 +1,13 @@
 # mocaco
 
-[![CI/CD](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
+[![CI/CD & Tests](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emalvarol/mocaco/actions/workflows/ci-cd.yml)
 ![Version](https://img.shields.io/github/v/tag/emalvarol/mocaco?sort=semver&filter=v*.*.*&label=version)
 ![PyPI](https://img.shields.io/pypi/v/mocaco?label=pypi)
 ![Python Versions](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)
+[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/monaco)
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
-Convergence analysis for Monte Carlo series using Polars DataFrames.
-
+Convergence analysis for Monte Carlo series using Polars DataFrames for fastest Python performance.
 <p align="center">
   <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/Logo_v1.png" alt="mocaco logo" width="400"/>
 </p>
@@ -54,13 +54,13 @@ print(result.n)  # Number of samples
 
 ## Documentation and Changes
 
-Full documentation is available at (https://emalvarol.github.io/mocaco/docs/), in the `docs/` directory, or can be built locally with:
+Full documentation is available at (https://emalvarol.github.io/mocaco/), in the `docs/` directory, or can be built locally with:
 
 ```bash
 mkdocs serve
 ```
 
-Changes and new features are available at (https://emalvarol.github.io/mocaco/CHANGELOG.md)
+Changes and new features are available at (https://github.com/emalvarol/mocaco/blob/main/CHANGELOG.md)
 
 ## Installation (Developers)
 

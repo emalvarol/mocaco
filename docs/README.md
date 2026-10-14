@@ -7,10 +7,11 @@
 ![License: LGPL](https://img.shields.io/badge/license-LGPL-blue)
 
 Convergence analysis for Monte Carlo series using Polars DataFrames.
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/emalvarol/mocaco/main/docs/assets/Logo_v1.png" alt="mocaco logo" width="400"/>
 </p>
+
+[![codecov](https://codecov.io/gh/emalvarol/mocaco/graph/badge.svg?token=FAL47REO7V)](https://codecov.io/gh/emalvarol/monaco)
 
 The library provides a simple API for applying different convergence and
 stopping criteria to Monte Carlo simulation results.
