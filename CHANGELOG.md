@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved logo
 - Code coverage badget
 - Toml classifiers
+- GitHub release in Actions
 
 ## [0.2.0] — 2026-10-14
 
