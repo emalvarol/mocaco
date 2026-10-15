@@ -198,7 +198,9 @@ def test_clt_multi_run_warm_up_not_reached_warns() -> None:
 def test_clt_multi_run_constant_column_zero_error() -> None:
     """A constant column makes the covariance degenerate, so the error is 0."""
     criterion = CLTMultivariateRelativeCriterion()
-    df = pl.DataFrame({"it": range(1, 101), "a": [float(i % 5) for i in range(100)], "b": [2.0] * 100})
+    df = pl.DataFrame(
+        {"it": range(1, 101), "a": [float(i % 5) for i in range(100)], "b": [2.0] * 100}
+    )
     sf = SampleFrame(df=df, target_cols=["a", "b"])
     result = criterion.run(samples=sf, params=InputParams(epsilon=0.05))
     assert result.error == 0.0
