@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING
 
 # Basic modules used to build the criterion (According contributor needs)
 import polars as pl

@@ -147,7 +147,11 @@ def test_sample_frame_non_numeric_target_in_list_raises() -> None:
 def test_sample_frame_null_values_in_list_raises() -> None:
     """ValueError when one of the target columns contains nulls."""
     df = pl.DataFrame(
-        {"it": range(1, 11), "a": [1.0] * 10, "b": [1.0, None, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]}
+        {
+            "it": range(1, 11),
+            "a": [1.0] * 10,
+            "b": [1.0, None, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+        }
     )
     with pytest.raises(ValueError, match=r"(?i)null|none"):
         SampleFrame(df=df, target_cols=["a", "b"])

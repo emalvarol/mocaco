@@ -78,8 +78,8 @@ def clt_rel_params() -> RelInputParams:
 
 @pytest.fixture
 def clt_multi_params() -> MultiInputParams:
-    """Default multivariate-criterion InputParams instance."""
-    return MultiInputParams(threshold=0.1, confidence_level=0.95)
+    """Default multivariate-criterion InputParams instance with all default values."""
+    return MultiInputParams()
 
 
 @pytest.fixture
@@ -143,9 +143,7 @@ def sample_frame_grouped(sample_df_grouped: pl.DataFrame) -> SampleFrame:
 @pytest.fixture
 def sample_frame_grouped_multi(sample_df_grouped_multi: pl.DataFrame) -> SampleFrame:
     """SampleFrame with two group columns."""
-    return SampleFrame(
-        df=sample_df_grouped_multi, target_cols="value", group_cols=["cat1", "cat2"]
-    )
+    return SampleFrame(df=sample_df_grouped_multi, target_cols="value", group_cols=["cat1", "cat2"])
 
 
 @pytest.fixture

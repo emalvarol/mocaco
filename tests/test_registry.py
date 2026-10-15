@@ -104,6 +104,7 @@ def test_register_overwrite_allows_duplicate() -> None:
         description = "Overwritten"
 
         params_type = DummyParams
+        dimensionality = "univariate"
 
         assumptions: ClassVar[Sequence[str]] = ()
         limitations: ClassVar[Sequence[str]] = ()

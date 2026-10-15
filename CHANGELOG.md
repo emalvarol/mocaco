@@ -6,11 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- New convergence method: clt_multi_rlt (vats_2019)
-- New tests for clt_uni_rlt
-- New tests for clt_multi_rlt
-- New tests for target_cols
-- New tests for "univariate" vs "multivariate"
+- Improve documentation and examples
 
 ## [0.3.0] — 2026-10-15
 
@@ -20,12 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toml classifiers
 - GitHub release in Actions
 - New clt_uni_rel method: Central Limit Theorem based convergence criterion using a relative Monte Carlo error threshold.
-- Tests to cover new method, GroupedConvergenceResult and group_cols
-- Added str, list and dic selector for GroupedConvergenceResult instead of the tuple key verbosity
-- Added `residual_error` field on `ConvergenceResult` (`max(0, |error| - threshold)`), populated by `clt_uni_abs` and `clt_uni_rel`
-- Added `GroupedConvergenceResult.residual_error_by(keep=...)` to aggregate residual errors over grouping dimensions
-- Added `GroupedConvergenceResult.data_residual_error_by(keep=..., filter=...)` returning the evolution of the aggregated residual error with `agg_<column>`, `res_error` and `is_converged` columns
-- Added `ResultPlotter.residual_error_evolution(keep=..., filter=..., show=...)` to plot the aggregated residual evolution for grouped results
+- Tests to cover new methods, GroupedConvergenceResult and group_cols
+- str, list and dic selector for GroupedConvergenceResult instead of the tuple key verbosity
+- `residual_error` field on `ConvergenceResult` (`max(0, |error| - threshold)`), populated by `clt_uni_abs` and `clt_uni_rel`
+- `GroupedConvergenceResult.residual_error_by(keep=...)` to aggregate residual errors over grouping dimensions
+- `GroupedConvergenceResult.data_residual_error_by(keep=..., filter=...)` returning the evolution of the aggregated residual error with `agg_<column>`, `res_error` and `is_converged` columns
+- `ResultPlotter.residual_error_evolution(keep=..., filter=..., show=...)` to plot the aggregated residual evolution for grouped results
+- New parameter to criterion protocol to specify if criterions works with `univariate` or `multivariate` dataframes
+
+### Changed
+- `target_col` accept now both `str` and `list[str]`
 
 ## [0.2.0] — 2026-10-14
 
