@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 # Basic modules used to build the criterion (According contributor needs)
 import polars as pl
@@ -52,6 +52,8 @@ class CLTRelativeCriterion:
     )
 
     params_type = InputParams
+
+    dimensionality = "univariate"
 
     assumptions = (
         "Samples are independent and identically distributed (i.i.d.).",
@@ -124,7 +126,7 @@ print(result.is_converged)"""
                     },
                 )
 
-            target = pl.col(samples.target_col).cast(pl.Float64)
+            target = pl.col(samples.target_cols[0]).cast(pl.Float64)
 
             # Single-pass evaluation if eval_frequency is not set
             if params.eval_frequency is None or params.eval_frequency == 1:

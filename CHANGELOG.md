@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - New convergence method: clt_multi_rlt (vats_2019)
+- New tests for clt_uni_rlt
 - New tests for clt_multi_rlt
+- New tests for target_cols
+- New tests for "univariate" vs "multivariate"
 
-## [0.3.0] — 2026-10-14
+## [0.3.0] — 2026-10-15
 
 ### Added
 - Improved logo

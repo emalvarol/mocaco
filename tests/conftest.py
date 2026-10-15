@@ -11,6 +11,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+from mocaco.methods.clt_multi_rel import InputParams as MultiInputParams
 from mocaco.methods.clt_uni_abs import InputParams
 from mocaco.methods.clt_uni_rel import InputParams as RelInputParams
 from mocaco.protocols import SampleFrame
@@ -54,13 +55,13 @@ def sample_df_no_it() -> pl.DataFrame:
 @pytest.fixture
 def sample_frame(sample_df_with_it: pl.DataFrame) -> SampleFrame:
     """Pre-built SampleFrame instance."""
-    return SampleFrame(df=sample_df_with_it, target_col="measurement")
+    return SampleFrame(df=sample_df_with_it, target_cols="measurement")
 
 
 @pytest.fixture
 def sample_df_no_it_frame(sample_df_no_it: pl.DataFrame) -> SampleFrame:
     """SampleFrame constructed from DataFrame without it_col."""
-    return SampleFrame(df=sample_df_no_it, target_col="value")
+    return SampleFrame(df=sample_df_no_it, target_cols="value")
 
 
 @pytest.fixture
@@ -76,9 +77,34 @@ def clt_rel_params() -> RelInputParams:
 
 
 @pytest.fixture
+def clt_multi_params() -> MultiInputParams:
+    """Default multivariate-criterion InputParams instance."""
+    return MultiInputParams(threshold=0.1, confidence_level=0.95)
+
+
+@pytest.fixture
+def sample_df_multi_target() -> pl.DataFrame:
+    """300-row DataFrame with two correlated target columns and an iteration column."""
+    rng = np.random.default_rng(3)
+    return pl.DataFrame(
+        {
+            "it": range(1, 301),
+            "a": rng.standard_normal(300),
+            "b": rng.standard_normal(300),
+        }
+    )
+
+
+@pytest.fixture
+def sample_frame_multi_target(sample_df_multi_target: pl.DataFrame) -> SampleFrame:
+    """Pre-built SampleFrame with two target columns."""
+    return SampleFrame(df=sample_df_multi_target, target_cols=["a", "b"])
+
+
+@pytest.fixture
 def sample_frame_constant(sample_df_constant: pl.DataFrame) -> SampleFrame:
     """Pre-built SampleFrame over a zero-variance DataFrame."""
-    return SampleFrame(df=sample_df_constant, target_col="value")
+    return SampleFrame(df=sample_df_constant, target_cols="value")
 
 
 @pytest.fixture
@@ -111,13 +137,15 @@ def sample_df_grouped_multi() -> pl.DataFrame:
 @pytest.fixture
 def sample_frame_grouped(sample_df_grouped: pl.DataFrame) -> SampleFrame:
     """SampleFrame with a single group column."""
-    return SampleFrame(df=sample_df_grouped, target_col="value", group_cols="group")
+    return SampleFrame(df=sample_df_grouped, target_cols="value", group_cols="group")
 
 
 @pytest.fixture
 def sample_frame_grouped_multi(sample_df_grouped_multi: pl.DataFrame) -> SampleFrame:
     """SampleFrame with two group columns."""
-    return SampleFrame(df=sample_df_grouped_multi, target_col="value", group_cols=["cat1", "cat2"])
+    return SampleFrame(
+        df=sample_df_grouped_multi, target_cols="value", group_cols=["cat1", "cat2"]
+    )
 
 
 @pytest.fixture

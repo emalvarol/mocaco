@@ -101,7 +101,30 @@ def test_samples_passes_columns() -> None:
     df = pl.DataFrame({"it": range(1, 11), "value": [1.0] * 10})
     sf = mcc.samples(df, target_col="value", it_col="it")
     assert sf.it_col == "it"
-    assert sf.target_col == "value"
+    assert sf.target_cols == ["value"]
+
+
+def test_samples_target_col_accepts_list() -> None:
+    """A list of target columns is forwarded and normalized."""
+    df = pl.DataFrame({"a": [1.0] * 10, "b": [2.0] * 10})
+    sf = mcc.samples(df, target_col=["a", "b"])
+    assert sf.target_cols == ["a", "b"]
+
+
+def test_convergence_univariate_rejects_multiple_targets() -> None:
+    """ValueError when a univariate method receives more than one target."""
+    df = pl.DataFrame({"a": [1.0] * 100, "b": [2.0] * 100})
+    samples = mcc.samples(df, target_col=["a", "b"])
+    with pytest.raises(ValueError, match=r"(?i)univariate"):
+        convergence(samples=samples, method="clt_uni_abs", threshold=0.5)
+
+
+def test_convergence_multivariate_rejects_single_target() -> None:
+    """ValueError when a multivariate method receives a single target."""
+    df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
+    samples = mcc.samples(df, target_col="value", it_col="it")
+    with pytest.raises(ValueError, match=r"(?i)multivariate"):
+        convergence(samples=samples, method="clt_multi_rel", threshold=0.5)
 
 
 def test_samples_passes_group_cols(sample_df_grouped: pl.DataFrame) -> None:

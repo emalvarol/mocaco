@@ -49,7 +49,7 @@ def test_clt_run_returns_result() -> None:
     """Returns ConvergenceResult instance."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(
         samples=sf,
         params=InputParams(threshold=0.5, confidence_level=0.95),
@@ -61,7 +61,7 @@ def test_clt_run_estimate_correct() -> None:
     """Estimate matches expected mean."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [2.5] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.estimate == 2.5
 
@@ -70,7 +70,7 @@ def test_clt_run_n_correct() -> None:
     """N matches DataFrame row count."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 51), "value": [1.0] * 50})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.n == 50
 
@@ -79,7 +79,7 @@ def test_clt_run_error_correct() -> None:
     """Error matches z_score * SEM."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.error is not None
 
@@ -88,7 +88,7 @@ def test_clt_run_converged_true() -> None:
     """Converges with tight threshold."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=1.0, confidence_level=0.95))
     assert result.is_converged is True
 
@@ -106,7 +106,7 @@ def test_clt_run_diagnostics() -> None:
     """Diagnostics contain threshold, confidence, z_score."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.99))
     assert "threshold" in result.diagnostics
     assert "confidence_level" in result.diagnostics
@@ -117,7 +117,7 @@ def test_clt_run_data_columns() -> None:
     """Output DataFrame has expected columns."""
     criterion = CLTAbsoluteCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     expected_cols = {"n", "mean", "std", "sem", "abs_error", "is_converged"}
     assert set(result.data.columns) == expected_cols
@@ -136,7 +136,7 @@ def test_clt_run_zero_variance(sample_frame_constant: SampleFrame) -> None:
 def test_clt_run_warmup_warns(sample_df_small: pl.DataFrame) -> None:
     """Warns when fewer than 30 samples (warm-up) are available."""
     criterion = CLTAbsoluteCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
 
@@ -144,7 +144,7 @@ def test_clt_run_warmup_warns(sample_df_small: pl.DataFrame) -> None:
 def test_clt_run_warmup_not_converged(sample_df_small: pl.DataFrame) -> None:
     """The warm-up path returns a not-converged result."""
     criterion = CLTAbsoluteCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.is_converged is False
@@ -153,7 +153,7 @@ def test_clt_run_warmup_not_converged(sample_df_small: pl.DataFrame) -> None:
 def test_clt_run_warmup_estimate_none(sample_df_small: pl.DataFrame) -> None:
     """The warm-up path exposes no estimate."""
     criterion = CLTAbsoluteCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.estimate is None
@@ -162,7 +162,7 @@ def test_clt_run_warmup_estimate_none(sample_df_small: pl.DataFrame) -> None:
 def test_clt_run_warmup_empty_data(sample_df_small: pl.DataFrame) -> None:
     """The warm-up path returns an empty diagnostic frame."""
     criterion = CLTAbsoluteCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.data.is_empty()
@@ -174,7 +174,7 @@ def test_clt_run_large_sample() -> None:
     rng = np.random.default_rng(42)
     values = rng.standard_normal(1000) * 0.01  # very low variance
     df = pl.DataFrame({"it": range(1, 1001), "value": values})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.is_converged is True
 

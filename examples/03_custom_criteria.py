@@ -19,6 +19,7 @@ class SimpleMeanParams(BaseModel):
 class SimpleMeanCriterion:
     name = "simple_mean"
     supports_eval_frequency = True
+    dimensionality = "univariate"
     description = "Checks if the cumulative mean is within a tolerance."
     params_type = SimpleMeanParams
     assumptions = ("Finite variance",)
@@ -29,7 +30,7 @@ class SimpleMeanCriterion:
 
     def run(self, samples, params: SimpleMeanParams) -> ConvergenceResult:
         # Simple logic: calculate cumulative mean of the target column
-        target = pl.col(samples.target_col).cast(pl.Float64)
+        target = pl.col(samples.target_cols[0]).cast(pl.Float64)
         agg_df = samples.df.select([pl.len().alias("n"), target.mean().alias("mean")])
 
         final = agg_df.row(0, named=True)

@@ -82,7 +82,7 @@ class CriterionRegistry:
         console.print(
             Panel(
                 f"{criterion.description}",
-                title=f"Method: [bold cyan]{name}[/bold cyan]",
+                title=f"Method: [bold cyan]{name}[/bold cyan] ({criterion.dimensionality})",
                 title_align="left",
                 border_style="cyan",
                 expand=False,

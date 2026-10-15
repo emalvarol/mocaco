@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol
 
 import polars as pl
 
@@ -25,8 +25,9 @@ class SampleFrame:
     ----------
     df
         Source Polars DataFrame.
-    target_col
-        Column containing the quantity to analyze.
+    target_cols
+        Column(s) containing the quantity/quantities to analyze. Accepts a single
+        column name or a list of column names; normalized to ``list[str]``.
     it_col
         Optional column containing the iteration/order of the samples.
     group_cols
@@ -34,12 +35,25 @@ class SampleFrame:
     """
 
     df: pl.DataFrame
-    target_col: str
+    target_cols: str | list[str]
     it_col: str | None = None
     group_cols: str | list[str] | None = None
 
     def __post_init__(self) -> None:
         """Validate columns, assign default iteration indices if missing, and handle edge cases."""
+        # Normalize target_cols to a non-empty, duplicate-free list[str]
+        if isinstance(self.target_cols, str):
+            targets = [self.target_cols]
+        else:
+            targets = list(self.target_cols)
+
+        if not targets:
+            raise ValueError("target_cols must contain at least one column name.")
+        if len(set(targets)) != len(targets):
+            raise ValueError(f"target_cols contains duplicate column names: {targets}.")
+
+        object.__setattr__(self, "target_cols", targets)
+
         # Normalize group_cols to a list[str]
         if isinstance(self.group_cols, str):
             object.__setattr__(self, "group_cols", [self.group_cols])
@@ -63,8 +77,10 @@ class SampleFrame:
         else:
             it_col_name = self.it_col
 
+        assert isinstance(self.target_cols, list)
+
         # Validate structural integrity (it_col_name is guaranteed to be str here)
-        missing = [col for col in (it_col_name, self.target_col) if col not in self.df.columns]
+        missing = [col for col in (it_col_name, *self.target_cols) if col not in self.df.columns]
         if missing:
             raise ValueError(
                 f"Columns not found in DataFrame: {missing}. Available columns: {self.df.columns}"
@@ -73,18 +89,19 @@ class SampleFrame:
         if self.df.is_empty():
             raise ValueError("The sample DataFrame cannot be empty.")
 
-        # Validate Data Types (it_col and target_col must be numeric)
+        # Validate Data Types (it_col and target_cols must be numeric)
         it_dtype = self.df.get_column(it_col_name).dtype
         if not it_dtype.is_numeric():
             raise TypeError(
                 f"Iteration column '{it_col_name}' must be numeric (int or float), got {it_dtype}."
             )
 
-        target = self.df.get_column(self.target_col)
-        if not target.dtype.is_numeric():
-            raise TypeError(
-                f"Target column '{self.target_col}' must be numeric (int or float), got {target.dtype}."
-            )
+        for col in self.target_cols:
+            target = self.df.get_column(col)
+            if not target.dtype.is_numeric():
+                raise TypeError(
+                    f"Target column '{col}' must be numeric (int or float), got {target.dtype}."
+                )
 
         assert isinstance(self.group_cols, list)
         for col in self.group_cols:
@@ -119,16 +136,16 @@ class SampleFrame:
                 )
 
         # Input validation and edge case handling (Null, NaN, Inf)
-        if target.is_null().any():
-            raise ValueError(f"Target column '{self.target_col}' contains Null (missing) values.")
+        for col in self.target_cols:
+            target = self.df.get_column(col)
+            if target.is_null().any():
+                raise ValueError(f"Target column '{col}' contains Null (missing) values.")
 
-        if target.dtype in (pl.Float32, pl.Float64):
-            if target.is_nan().any():
-                raise ValueError(f"Target column '{self.target_col}' contains NaN values.")
-            if target.is_infinite().any():
-                raise ValueError(
-                    f"Target column '{self.target_col}' contains Infinite (Inf) values."
-                )
+            if target.dtype in (pl.Float32, pl.Float64):
+                if target.is_nan().any():
+                    raise ValueError(f"Target column '{col}' contains NaN values.")
+                if target.is_infinite().any():
+                    raise ValueError(f"Target column '{col}' contains Infinite (Inf) values.")
 
 
 class Criterion(Protocol):
@@ -137,6 +154,7 @@ class Criterion(Protocol):
     name: str
     description: str
     params_type: type[Any]
+    dimensionality: ClassVar[Literal["univariate", "multivariate"]]
 
     assumptions: ClassVar[Sequence[str]]
     limitations: ClassVar[Sequence[str]]

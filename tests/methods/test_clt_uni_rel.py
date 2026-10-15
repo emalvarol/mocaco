@@ -51,7 +51,7 @@ def test_clt_rel_criterion_registered() -> None:
 def test_clt_rel_run_returns_result() -> None:
     """Returns ConvergenceResult instance."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(), target_col="value")
+    sf = SampleFrame(df=_linear_frame(), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert isinstance(result, ConvergenceResult)
 
@@ -60,7 +60,7 @@ def test_clt_rel_run_estimate_correct() -> None:
     """Estimate matches expected mean."""
     criterion = CLTRelativeCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [2.5] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.estimate == 2.5
 
@@ -68,7 +68,7 @@ def test_clt_rel_run_estimate_correct() -> None:
 def test_clt_rel_run_n_correct() -> None:
     """N matches DataFrame row count."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(50), target_col="value")
+    sf = SampleFrame(df=_linear_frame(50), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.n == 50
 
@@ -76,7 +76,7 @@ def test_clt_rel_run_n_correct() -> None:
 def test_clt_rel_run_error_correct() -> None:
     """Error matches abs_error / |mean|."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
 
     z_score = float(norm.ppf(1.0 - (1.0 - 0.95) / 2.0))
@@ -89,7 +89,7 @@ def test_clt_rel_run_error_correct() -> None:
 def test_clt_rel_run_error_col_is_rel_error() -> None:
     """The reported error column is the relative error."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.error_col == "rel_error"
 
@@ -98,7 +98,7 @@ def test_clt_rel_run_converged_true() -> None:
     """Converges with a loose threshold on zero-variance data."""
     criterion = CLTRelativeCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [1.0] * 100})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=1.0, confidence_level=0.95))
     assert result.is_converged is True
 
@@ -115,7 +115,7 @@ def test_clt_rel_run_converged_false(sample_frame: SampleFrame) -> None:
 def test_clt_rel_run_diagnostics() -> None:
     """Diagnostics contain threshold, confidence, z_score and relative_error_used."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(), target_col="value")
+    sf = SampleFrame(df=_linear_frame(), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.99))
     assert {"threshold", "confidence_level", "z_score", "relative_error_used"} <= set(
         result.diagnostics
@@ -125,7 +125,7 @@ def test_clt_rel_run_diagnostics() -> None:
 def test_clt_rel_run_data_columns() -> None:
     """Output DataFrame has expected columns."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(), target_col="value")
+    sf = SampleFrame(df=_linear_frame(), target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     expected_cols = {"n", "mean", "std", "sem", "abs_error", "rel_error", "is_converged"}
     assert set(result.data.columns) == expected_cols
@@ -144,7 +144,7 @@ def test_clt_rel_run_near_zero_mean_fallback() -> None:
     """Falls back to absolute error when the estimate is near zero."""
     criterion = CLTRelativeCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [-1.0, 1.0] * 50})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=1.0, confidence_level=0.95))
     assert result.diagnostics["relative_error_used"] is False
 
@@ -153,7 +153,7 @@ def test_clt_rel_run_near_zero_mean_error_is_abs_error() -> None:
     """Returned error equals the absolute error when falling back."""
     criterion = CLTRelativeCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [-1.0, 1.0] * 50})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=1.0, confidence_level=0.95))
     assert result.error == result.data["abs_error"][0]
 
@@ -162,7 +162,7 @@ def test_clt_rel_run_near_zero_mean_rel_error_is_null() -> None:
     """Relative error column is null when the estimate is near zero."""
     criterion = CLTRelativeCriterion()
     df = pl.DataFrame({"it": range(1, 101), "value": [-1.0, 1.0] * 50})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=1.0, confidence_level=0.95))
     assert result.data["rel_error"][0] is None
 
@@ -173,7 +173,7 @@ def test_clt_rel_run_large_sample() -> None:
     rng = np.random.default_rng(42)
     values = rng.standard_normal(1000) * 0.01 + 10.0
     df = pl.DataFrame({"it": range(1, 1001), "value": values})
-    sf = SampleFrame(df=df, target_col="value")
+    sf = SampleFrame(df=df, target_cols="value")
     result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.is_converged is True
 
@@ -181,7 +181,7 @@ def test_clt_rel_run_large_sample() -> None:
 def test_clt_rel_run_insufficient_sample_warns(sample_df_small: pl.DataFrame) -> None:
     """Warns when fewer than 30 samples are available."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
 
@@ -189,7 +189,7 @@ def test_clt_rel_run_insufficient_sample_warns(sample_df_small: pl.DataFrame) ->
 def test_clt_rel_run_insufficient_sample_not_converged(sample_df_small: pl.DataFrame) -> None:
     """The insufficient-sample warm-up path returns a not-converged result."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=sample_df_small, target_col="value")
+    sf = SampleFrame(df=sample_df_small, target_cols="value")
     with pytest.warns(UserWarning, match="less than the required minimum of 30"):
         result = criterion.run(samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95))
     assert result.is_converged is False
@@ -198,7 +198,7 @@ def test_clt_rel_run_insufficient_sample_not_converged(sample_df_small: pl.DataF
 def test_clt_rel_run_with_eval_frequency() -> None:
     """eval_frequency produces a periodic diagnostic frame."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(
         samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95, eval_frequency=10)
     )
@@ -208,7 +208,7 @@ def test_clt_rel_run_with_eval_frequency() -> None:
 def test_clt_rel_run_eval_frequency_last_row_is_total() -> None:
     """The final evaluated row always corresponds to the full sample."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(
         samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95, eval_frequency=10)
     )
@@ -218,7 +218,7 @@ def test_clt_rel_run_eval_frequency_last_row_is_total() -> None:
 def test_clt_rel_run_eval_frequency_diagnostics() -> None:
     """eval_frequency diagnostics report frequency and number of evaluations."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(
         samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95, eval_frequency=10)
     )
@@ -228,7 +228,7 @@ def test_clt_rel_run_eval_frequency_diagnostics() -> None:
 def test_clt_rel_run_eval_frequency_has_rel_error_column() -> None:
     """The eval_frequency frame still exposes the relative error column."""
     criterion = CLTRelativeCriterion()
-    sf = SampleFrame(df=_linear_frame(100), target_col="value")
+    sf = SampleFrame(df=_linear_frame(100), target_cols="value")
     result = criterion.run(
         samples=sf, params=InputParams(threshold=0.5, confidence_level=0.95, eval_frequency=10)
     )

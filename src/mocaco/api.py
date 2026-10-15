@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def samples(
     df: pl.DataFrame,
     *,
-    target_col: str,
+    target_col: str | list[str],
     it_col: str | None = None,
     group_cols: str | list[str] | None = None,
 ) -> SampleFrame:
@@ -37,14 +37,14 @@ def samples(
     df
         Source Polars DataFrame.
     target_col
-        Column containing the quantity to analyze.
+        Column, or list of columns, containing the quantity/quantities to analyze.
     it_col
         Optional column containing the iteration/order of the samples. If the user omit it, it
         is automatically completed.
     group_cols
         Optional column(s) identifying independent groups for grouped convergence analysis.
     """
-    return SampleFrame(df=df, target_col=target_col, it_col=it_col, group_cols=group_cols)
+    return SampleFrame(df=df, target_cols=target_col, it_col=it_col, group_cols=group_cols)
 
 
 class Convergence:
@@ -55,6 +55,25 @@ class Convergence:
     or ``convergence.clt_absolute(samples, threshold=...)`` for typed calls.
     """
 
+    @staticmethod
+    def _validate_dimensionality(criterion: Criterion, samples: SampleFrame) -> None:
+        """Ensure the criterion dimensionality matches the number of target columns."""
+        target_cols = samples.target_cols
+        n_targets = 1 if isinstance(target_cols, str) else len(target_cols)
+        dimensionality = criterion.dimensionality
+
+        if dimensionality == "univariate" and n_targets != 1:
+            raise ValueError(
+                f"Criterion '{criterion.name}' is univariate but received {n_targets} "
+                "target columns. Provide exactly one 'target_col'."
+            )
+
+        if dimensionality == "multivariate" and n_targets < 2:
+            raise ValueError(
+                f"Criterion '{criterion.name}' is multivariate but received {n_targets} "
+                "target column(s). Provide at least two target columns via 'target_col'."
+            )
+
     def _execute_criterion(
         self,
         criterion: Criterion,
@@ -62,6 +81,8 @@ class Convergence:
         kwargs: dict[str, Any],
     ) -> ConvergenceResult | GroupedConvergenceResult:
         start_time = time.perf_counter()
+
+        self._validate_dimensionality(criterion, samples)
 
         params = criterion.params_type(**kwargs)
         result = criterion.run(samples=samples, params=params)
