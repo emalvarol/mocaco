@@ -173,10 +173,32 @@ class ResultPlotter:
             label="Error Band",
         )
 
-        # Plot vertical line for convergence (first True occurrence)
-        converged_df = df.filter(pl.col(self.result.is_converged_col))
-        if not converged_df.is_empty():
-            first_converged_n = converged_df.get_column(self.result.n_col)[0]
+        # Plot vertical line for convergence (last False followed by stable True)
+        n_vals = df.get_column(self.result.n_col).to_numpy()
+        is_conv = df.get_column(self.result.is_converged_col).to_numpy()
+
+        # Find the last index where is_converged is False
+        last_false_idx = None
+        for i in range(len(is_conv) - 1, -1, -1):
+            if not is_conv[i]:
+                last_false_idx = i
+                break
+
+        first_converged_n = None
+        if (
+            last_false_idx is not None
+            and last_false_idx + 1 < len(is_conv)
+            and all(is_conv[last_false_idx + 1 :])
+        ):
+            first_converged_n = n_vals[last_false_idx + 1]
+
+        if first_converged_n is None:
+            # Fall back to first True occurrence (current behaviour)
+            converged_df = df.filter(pl.col(self.result.is_converged_col))
+            if not converged_df.is_empty():
+                first_converged_n = converged_df.get_column(self.result.n_col)[0]
+
+        if first_converged_n is not None:
             ax.axvline(
                 x=first_converged_n,
                 color="red",
@@ -274,9 +296,19 @@ class ResultPlotter:
                     linestyle="--",
                     alpha=0.7,
                 )
+        #Dynamic y symlog
+        res_column = df.get_column("res_error")
+        max_residual = float(res_column.max()) # type: ignore[arg-type]
 
-        max_residual = float(df.get_column("res_error").max())  # type: ignore[arg-type]
-        ax.set_ylim(bottom=0, top=max(max_residual, 1e-12))
+        pos_residuals = res_column.filter(res_column > 0)
+        if not pos_residuals.is_empty():
+            min_pos = float(pos_residuals.min())  # type: ignore[arg-type]
+            linthresh = max(min_pos, 1e-12)
+        else:
+            linthresh = 1e-6
+
+        ax.set_yscale("symlog", linthresh=linthresh, linscale=1.0)
+        ax.set_ylim(bottom=0, top=max(max_residual, linthresh * 10))
 
         ax.set_xlabel("Number of samples (n)")
         ax.set_ylabel("Residual error")

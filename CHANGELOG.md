@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - Improve documentation and examples
+    - economic results
+    - basic examples to show all the mocaco capabilities
+
+## [0.3.1] — 2026-10-21
+
+### Added
+- Example with real data `10_water_depht`.
+- More tests for plots.
+
+### Added
+- Improved `residual_error_evolution` method within `ResultPlotter` class.
+
+### Fixed
+- Proper vertical convergence line plot when convergence true and false alternates.
 
 ## [0.3.0] — 2026-10-15
 

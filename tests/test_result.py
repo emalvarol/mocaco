@@ -315,6 +315,82 @@ def test_plotter_evolution_no_convergence() -> None:
     plt.close()
 
 
+def test_plotter_evolution_last_false_stable_true() -> None:
+    """Vertical line plots at last False followed by stable True."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # 26 rows: n=50,100,...,1296 (step 50)
+    # is_converged pattern:
+    #   n=50-200 (idx 0-3): True  (initial warmup)
+    #   n=250-650 (idx 4-12): False
+    #   n=700-800 (idx 13-15): True
+    #   n=850 (idx 16): False  (outlier)
+    #   n=900-1296 (idx 17-25): True  (stable convergence)
+    result = ConvergenceResult(
+        method="test",
+        n=1296,
+        n_col="n",
+        estimate=0.0,
+        estimate_col="mean",
+        error=0.01,
+        error_col="abs_error",
+        is_converged=True,
+        is_converged_col="is_converged",
+        data=pl.DataFrame(
+            {
+                "n": list(range(50, 1301, 50)),  # 50, 100, ..., 1296 (26 values)
+                "mean": [0.0] * 26,
+                "abs_error": [0.0] * 26,
+                "is_converged": [
+                    True,
+                    True,
+                    True,
+                    True,  # idx 0-3: initial warmup True
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,
+                    False,  # idx 4-12: False
+                    True,
+                    True,
+                    True,  # idx 13-15: True (n=700-800)
+                    False,  # idx 16: outlier False
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,
+                    True,  # idx 17-25: stable True
+                ],
+            }
+        ),
+    )
+    ax = result.plot.evolution()
+    import matplotlib.axes
+
+    assert isinstance(ax, matplotlib.axes.Axes)
+    # The vertical line should be at n=900 (last False at n=850, index 16,
+    # first True after at n=900, index 17, with all remaining True)
+    # Get the ax lines to verify
+    lines = ax.get_lines()
+    vert_lines = [
+        line for line in lines if line.get_linestyle() == "--" and line.get_color() == "red"
+    ]
+    assert len(vert_lines) == 1, f"Expected 1 vertical line, got {len(vert_lines)}"
+    # The x position should be 900
+    x_val = np.asarray(vert_lines[0].get_xdata())[0]
+    assert x_val == 900.0, f"Expected x=900.0, got {x_val}"
+    plt.close()
+
+
 def test_plotter_evolution_with_show_false() -> None:
     """Does not call plt.show() when show=False."""
     import matplotlib.pyplot as plt
