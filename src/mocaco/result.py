@@ -296,9 +296,9 @@ class ResultPlotter:
                     linestyle="--",
                     alpha=0.7,
                 )
-        #Dynamic y symlog
+        # Dynamic y symlog
         res_column = df.get_column("res_error")
-        max_residual = float(res_column.max()) # type: ignore[arg-type]
+        max_residual = float(res_column.max())  # type: ignore[arg-type]
 
         pos_residuals = res_column.filter(res_column > 0)
         if not pos_residuals.is_empty():
